@@ -1,0 +1,256 @@
+import React, { useState } from "react";
+import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
+import UserAuth from "../../../../assets/UserAuth.png";
+import { FaArrowLeft } from "react-icons/fa";
+import Modal from "react-modal";
+import { FaCheckCircle, FaTimesCircle } from "react-icons/fa";
+
+Modal.setAppElement("#root");
+
+const AdminRegister = () => {
+  const [formData, setFormData] = useState({ 
+    email: "", 
+    password: "", 
+    confirmPassword: "" 
+  });
+  const navigate = useNavigate();
+  const [modalIsOpen, setModalIsOpen] = useState(false);
+  const [modalStatus, setModalStatus] = useState(null);
+  const [modalMessage, setModalMessage] = useState("");
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleGoToLogin = () => navigate("/admin-login");
+  const handleGoBack = () => navigate("/home");
+  const handleGoogleRegister = () => {
+    alert("Google registration for admin - integrate OAuth");
+  };
+
+  const generateRandomId = () => {
+    return Math.floor(1000000000 + Math.random() * 9000000000).toString();
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const { email, password, confirmPassword } = formData;
+
+    if (password !== confirmPassword) {
+      setModalStatus("error");
+      setModalMessage("Passwords do not match!");
+      setModalIsOpen(true);
+      return;
+    }
+
+    const existingAdmins = JSON.parse(localStorage.getItem("ecoTrackAdmins")) || [];
+
+    const emailExists = existingAdmins.some(admin => admin.email === email);
+    if (emailExists) {
+      setModalStatus("error");
+      setModalMessage("Admin email already registered.");
+      setModalIsOpen(true);
+      return;
+    }
+
+    const currentDate = new Date();
+    const formattedDate = currentDate.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
+    const adminId = generateRandomId();
+
+    const newAdmin = { 
+      id: adminId,
+      email, 
+      password,
+      dateRegistered: formattedDate 
+    };
+
+    const updatedAdmins = [...existingAdmins, newAdmin];
+    localStorage.setItem("ecoTrackAdmins", JSON.stringify(updatedAdmins));
+
+    setModalStatus("success");
+    setModalMessage("Admin registration successful!");
+    setModalIsOpen(true);
+
+    setTimeout(() => {
+      navigate("/admin-login");
+    }, 3000);
+  };
+
+  return (
+    <div className="py-20 px-6 max-w-6xl mx-auto bg-white text-black">
+      <div className="flex items-center mb-6 cursor-pointer" onClick={handleGoBack}>
+        <FaArrowLeft className="text-green-600 mr-2" />
+        <span className="text-green-600 font-medium">Back to Homepage</span>
+      </div>
+
+      <motion.h2
+        className="text-4xl font-bold text-center mb-4 text-green-600"
+        initial={{ y: 50, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.6 }}
+      >
+        Welcome to EcoTrack Admin!
+      </motion.h2>
+
+      <motion.p
+        className="text-center max-w-2xl mx-auto text-base md:text-lg mb-10"
+        initial={{ y: 50, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.3, duration: 0.6 }}
+      >
+        To get started with EcoTrack Admin Panel, kindly complete the registration form below to create your admin account.
+      </motion.p>
+
+      <div className="flex flex-col md:flex-row justify-between items-center gap-12">
+        <motion.img
+          src={UserAuth}
+          alt="Admin Register"
+          className="w-full md:w-1/2 max-w-sm md:max-w-md object-contain"
+          initial={{ x: 100, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          transition={{ delay: 0.6, duration: 0.8 }}
+        />
+
+        <motion.div
+          className="w-full md:w-1/2 p-1"
+          initial={{ x: -100, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          transition={{ delay: 0.6, duration: 0.8 }}
+        >
+          <div className="bg-white rounded-xl p-6 shadow-md w-full max-w-sm mx-auto">
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <h2 className="text-3xl font-bold text-green-600 text-center">Register</h2>
+
+              <div>
+                <label htmlFor="email" className="block mb-1 font-medium text-sm">Email:</label>
+                <input
+                  type="email"
+                  name="email"
+                  id="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-600 font-normal"
+                  required
+                />
+              </div>
+
+              <div>
+                <label htmlFor="password" className="block mb-1 font-medium text-sm">Password:</label>
+                <input
+                  type="password"
+                  name="password"
+                  id="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-600 font-normal"
+                  required
+                />
+              </div>
+
+              <div>
+                <label htmlFor="confirmPassword" className="block mb-1 font-medium text-sm">Confirm Password:</label>
+                <input
+                  type="password"
+                  name="confirmPassword"
+                  id="confirmPassword"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-600 font-normal"
+                  required
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="w-full bg-green-600 text-white px-5 py-2.5 rounded-md text-sm sm:text-base font-medium hover:bg-yellow-400 hover:text-black transition duration-300 shadow-md hover:shadow-lg"
+              >
+                REGISTER
+              </button>
+
+              <div className="text-sm text-center text-black mt-4 font-normal">
+                Already have an admin account?
+                <div className="mt-2">
+                  <button
+                    type="button"
+                    onClick={handleGoToLogin}
+                    className="w-full bg-green-600 text-white px-5 py-2.5 rounded-md text-sm sm:text-base font-medium hover:bg-yellow-400 hover:text-black transition duration-300 shadow-md hover:shadow-lg"
+                  >
+                    LOGIN
+                  </button>
+                </div>
+              </div>
+
+              <div className="relative my-4">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-300"></div>
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-2 bg-white text-gray-500">Or continue with</span>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleGoogleRegister}
+                className="w-full flex items-center justify-center gap-2 bg-white border border-gray-300 rounded-md px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition duration-300 shadow-sm hover:shadow-md"
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24">
+                  <path
+                    fill="#4285F4"
+                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                  />
+                  <path
+                    fill="#34A853"
+                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                  />
+                  <path
+                    fill="#FBBC05"
+                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                  />
+                  <path
+                    fill="#EA4335"
+                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                  />
+                </svg>
+                Continue with Google
+              </button>
+            </form>
+          </div>
+        </motion.div>
+      </div>
+
+      <Modal
+        isOpen={modalIsOpen}
+        onRequestClose={() => setModalIsOpen(false)}
+        contentLabel="Registration Status Modal"
+        className="bg-white w-80 max-w-md mx-auto p-6 rounded-lg shadow-lg outline-none flex flex-col items-center text-center"
+        overlayClassName="fixed inset-0 bg-black bg-opacity-30 flex justify-center items-center z-50"
+      >
+        <div className="text-5xl mb-4">
+          {modalStatus === "success" ? (
+            <FaCheckCircle className="text-green-600" />
+          ) : (
+            <FaTimesCircle className="text-red-600" />
+          )}
+        </div>
+        <h2
+          className={`text-lg font-semibold ${
+            modalStatus === "success" ? "text-green-600" : "text-red-600"
+          }`}
+        >
+          {modalMessage}
+        </h2>
+      </Modal>
+    </div>
+  );
+};
+
+export default AdminRegister;

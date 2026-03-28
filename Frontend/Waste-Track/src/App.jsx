@@ -1,4 +1,5 @@
 import HomepageRoutes from "./routes/HomepageRoutes/HomepageRoutes";
+import AuthRoutes from "./routes/AuthRoutes/AuthRoutes";
 
 function App() {
   
@@ -6,6 +7,7 @@ function App() {
   return (
     <>
       <HomepageRoutes />
+      <AuthRoutes />
     </>
   )
 }

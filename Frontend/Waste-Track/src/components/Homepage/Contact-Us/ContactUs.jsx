@@ -116,7 +116,7 @@ export default function ContactUs() {
           />
           <button
             type="submit"
-            className="bg-green-600 text-white px-6 py-3 rounded-lg text-sm sm:text-base font-medium hover:bg-green-700 transition duration-300 shadow-md hover:shadow-lg w-full md:w-auto"
+            className="bg-green-600 text-white px-5 py-2.5 rounded-md text-sm sm:text-base font-medium hover:bg-yellow-400 hover:text-black transition duration-300 shadow-md hover:shadow-lg w-full md:w-auto"
           >
             Send Message
           </button>
