@@ -5,14 +5,15 @@ import UserAuth from "../../../../assets/UserAuth.png";
 import { FaArrowLeft } from "react-icons/fa";
 import Modal from "react-modal";
 import { FaCheckCircle, FaTimesCircle } from "react-icons/fa";
+import api from "../../../../services/API";
 
 Modal.setAppElement("#root");
 
 const UserRegister = () => {
-  const [formData, setFormData] = useState({ 
-    email: "", 
-    password: "", 
-    confirmPassword: "" 
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+    confirmPassword: "",
   });
   const navigate = useNavigate();
   const [modalIsOpen, setModalIsOpen] = useState(false);
@@ -26,62 +27,48 @@ const UserRegister = () => {
   const handleGoToLogin = () => navigate("/login");
   const handleGoBack = () => navigate("/home");
   const handleGoogleRegister = () => {
-    alert("Google registration - integrate OAuth");
+    window.location.href = 'http://localhost:3000/api/auth/google';
   };
 
-  const generateRandomId = () => {
-    return Math.floor(1000000000 + Math.random() * 9000000000).toString();
-  };
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const { email, password, confirmPassword } = formData;
+
+    const passwordRegex = /^.{4,}$/;
+    if (!passwordRegex.test(password)) {
+      setModalStatus("error");
+      setModalMessage("Password must be at least 4 characters long.");
+      setModalIsOpen(true);
+      setTimeout(() => setModalIsOpen(false), 3000);
+      return;
+    }
 
     if (password !== confirmPassword) {
       setModalStatus("error");
       setModalMessage("Passwords do not match!");
       setModalIsOpen(true);
+      setTimeout(() => setModalIsOpen(false), 3000);
       return;
     }
 
-    const existingUsers = JSON.parse(localStorage.getItem("ecoTrackUsers")) || [];
-
-    const emailExists = existingUsers.some(user => user.email === email);
-    if (emailExists) {
+    try {
+      const response = await api.post("/register", { email, password });
+      if (response.status === 201) {
+        setModalStatus("success");
+        setModalMessage("Registration successful! Redirecting to login...");
+        setModalIsOpen(true);
+        setTimeout(() => {
+          navigate("/login");
+        }, 3000);
+      } else {
+        throw new Error("Registration failed");
+      }
+    } catch (error) {
       setModalStatus("error");
-      setModalMessage("Email already registered.");
+      setModalMessage(error.response?.data?.error || "Registration failed. Email may already exist.");
       setModalIsOpen(true);
-      return;
+      setTimeout(() => setModalIsOpen(false), 3000);
     }
-
-    const currentDate = new Date();
-    const formattedDate = currentDate.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-
-    const userId = generateRandomId();
-
-    const newUser = {
-      id: userId, 
-      email, 
-      password,
-      dateRegistered: formattedDate 
-    };
-
-    const updatedUsers = [...existingUsers, newUser];
-    localStorage.setItem("ecoTrackUsers", JSON.stringify(updatedUsers));
-
-    setModalStatus("success");
-    setModalMessage("Registration successful!");
-    setModalIsOpen(true);
-
-    setTimeout(() => {
-      navigate("/login");
-    }, 3000);
   };
 
   return (
@@ -232,7 +219,7 @@ const UserRegister = () => {
         onRequestClose={() => setModalIsOpen(false)}
         contentLabel="Registration Status Modal"
         className="bg-white w-80 max-w-md mx-auto p-6 rounded-lg shadow-lg outline-none flex flex-col items-center text-center"
-        overlayClassName="fixed inset-0 bg-black bg-opacity-30 flex justify-center items-center z-50"
+        overlayClassName="fixed inset-0 bg-opacity-100 backdrop-blur-sm flex justify-center items-center z-50"
       >
         <div className="text-5xl mb-4">
           {modalStatus === "success" ? (

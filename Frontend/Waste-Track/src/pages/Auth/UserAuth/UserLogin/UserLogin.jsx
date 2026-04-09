@@ -5,6 +5,7 @@ import UserAuth from "../../../../assets/UserAuth.png";
 import { FaArrowLeft } from "react-icons/fa";
 import Modal from "react-modal";
 import { FaCheckCircle, FaTimesCircle } from "react-icons/fa";
+import api from "../../../../services/API";
 
 Modal.setAppElement("#root");
 
@@ -13,43 +14,54 @@ const UserLogin = () => {
   const navigate = useNavigate();
   const [modalIsOpen, setModalIsOpen] = useState(false);
   const [modalStatus, setModalStatus] = useState(null);
+  const [modalMessage, setModalMessage] = useState("");
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    const { email, password } = formData;
 
-    const users = JSON.parse(localStorage.getItem("ecoTrackUsers")) || [];
-    const user = users.find(
-      (u) => u.email === formData.email && u.password === formData.password
-    );
-
-    if (user) {
-      setModalStatus("success");
-      localStorage.setItem("ecoTrackCurrentUserEmail", user.email);
-      localStorage.setItem("ecoTrackCurrentUser", JSON.stringify(user));
-    } else {
+    // Password minimum 4 characters validation
+    const passwordRegex = /^.{4,}$/;
+    if (!passwordRegex.test(password)) {
       setModalStatus("error");
+      setModalMessage("Password must be at least 4 characters long.");
+      setModalIsOpen(true);
+      setTimeout(() => setModalIsOpen(false), 3000);
+      return;
     }
 
-    setModalIsOpen(true);
-    setTimeout(() => {
-      setModalIsOpen(false);
-      if (user) {
-        navigate("/dashboard");
+    try {
+      const response = await api.post("/login", { email, password });
+      if (response.data.accessToken) {
+        localStorage.setItem("accessToken", response.data.accessToken);
+        localStorage.setItem("refreshToken", response.data.refreshToken);
+        setModalStatus("success");
+        setModalMessage("Login successful! Redirecting...");
+        setModalIsOpen(true);
+        setTimeout(() => {
+          navigate("/dashboard");
+        }, 2000);
+      } else {
+        throw new Error("No token received");
       }
-    }, 3000);
+    } catch (error) {
+      setModalStatus("error");
+      setModalMessage(error.response?.data?.error || "Invalid email or password");
+      setModalIsOpen(true);
+      setTimeout(() => setModalIsOpen(false), 3000);
+    }
   };
 
   const handleGoToRegister = () => navigate("/register");
   const handleGoToForgotPassword = () => navigate("/forgot-password");
   const handleGoBack = () => navigate("/home");
   const handleGoogleLogin = () => {
-    // Placeholder for Google OAuth
-    alert("Google login - integrate OAuth");
-  };
+  window.location.href = 'http://localhost:3000/api/auth/google';
+};
 
   return (
     <div className="py-20 px-6 max-w-6xl mx-auto bg-white text-black">
@@ -187,12 +199,13 @@ const UserLogin = () => {
         </motion.div>
       </div>
 
+      {/* Modal with white blurred overlay */}
       <Modal
         isOpen={modalIsOpen}
         onRequestClose={() => setModalIsOpen(false)}
         contentLabel="Login Status Modal"
         className="bg-white w-80 max-w-md mx-auto p-6 rounded-lg shadow-lg outline-none flex flex-col items-center text-center"
-        overlayClassName="fixed inset-0 bg-black bg-opacity-30 flex justify-center items-center z-50"
+        overlayClassName="fixed inset-0 bg-opacity-100 backdrop-blur-sm flex justify-center items-center z-50"
       >
         <div className="text-5xl mb-4">
           {modalStatus === "success" ? (
@@ -206,9 +219,7 @@ const UserLogin = () => {
             modalStatus === "success" ? "text-green-600" : "text-red-600"
           }`}
         >
-          {modalStatus === "success"
-            ? "Login successful!"
-            : "Invalid email or password."}
+          {modalMessage}
         </h2>
       </Modal>
     </div>

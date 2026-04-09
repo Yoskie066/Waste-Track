@@ -5,6 +5,7 @@ import UserAuth from "../../../../assets/UserAuth.png";
 import { FaArrowLeft } from "react-icons/fa";
 import Modal from "react-modal";
 import { FaCheckCircle, FaTimesCircle } from "react-icons/fa";
+import adminApi from "../../../../services/adminApi";
 
 Modal.setAppElement("#root");
 
@@ -13,42 +14,53 @@ const AdminLogin = () => {
   const navigate = useNavigate();
   const [modalIsOpen, setModalIsOpen] = useState(false);
   const [modalStatus, setModalStatus] = useState(null);
+  const [modalMessage, setModalMessage] = useState("");
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    const { email, password } = formData;
 
-    const admins = JSON.parse(localStorage.getItem("ecoTrackAdmins")) || [];
-    const admin = admins.find(
-      (a) => a.email === formData.email && a.password === formData.password
-    );
-
-    if (admin) {
-      setModalStatus("success");
-      localStorage.setItem("ecoTrackCurrentAdminEmail", admin.email);
-      localStorage.setItem("ecoTrackCurrentAdmin", JSON.stringify(admin));
-    } else {
+    // Password minimum 4 characters validation
+    if (password.length < 4) {
       setModalStatus("error");
+      setModalMessage("Password must be at least 4 characters long.");
+      setModalIsOpen(true);
+      setTimeout(() => setModalIsOpen(false), 3000);
+      return;
     }
 
-    setModalIsOpen(true);
-    setTimeout(() => {
-      setModalIsOpen(false);
-      if (admin) {
-        navigate("/analytics");
+    try {
+      const response = await adminApi.post("/login", { email, password });
+      if (response.data.accessToken) {
+        localStorage.setItem("adminAccessToken", response.data.accessToken);
+        localStorage.setItem("adminRefreshToken", response.data.refreshToken);
+        setModalStatus("success");
+        setModalMessage("Admin login successful! Redirecting...");
+        setModalIsOpen(true);
+        setTimeout(() => {
+          navigate("/analytics");
+        }, 2000);
+      } else {
+        throw new Error("No token received");
       }
-    }, 3000);
+    } catch (error) {
+      setModalStatus("error");
+      setModalMessage(error.response?.data?.error || "Invalid email or password");
+      setModalIsOpen(true);
+      setTimeout(() => setModalIsOpen(false), 3000);
+    }
   };
 
   const handleGoToRegister = () => navigate("/admin-register");
   const handleGoToForgotPassword = () => navigate("/admin-forgot-password");
   const handleGoBack = () => navigate("/home");
   const handleGoogleLogin = () => {
-    alert("Google login for admin - integrate OAuth");
-  };
+  window.location.href = 'http://localhost:3000/api/auth/google/admin';
+};
 
   return (
     <div className="py-20 px-6 max-w-6xl mx-auto bg-white text-black">
@@ -191,7 +203,7 @@ const AdminLogin = () => {
         onRequestClose={() => setModalIsOpen(false)}
         contentLabel="Login Status Modal"
         className="bg-white w-80 max-w-md mx-auto p-6 rounded-lg shadow-lg outline-none flex flex-col items-center text-center"
-        overlayClassName="fixed inset-0 bg-black bg-opacity-30 flex justify-center items-center z-50"
+        overlayClassName="fixed inset-0 bg-opacity-100 backdrop-blur-sm flex justify-center items-center z-50"
       >
         <div className="text-5xl mb-4">
           {modalStatus === "success" ? (
@@ -205,9 +217,7 @@ const AdminLogin = () => {
             modalStatus === "success" ? "text-green-600" : "text-red-600"
           }`}
         >
-          {modalStatus === "success"
-            ? "Admin login successful!"
-            : "Invalid admin credentials."}
+          {modalMessage}
         </h2>
       </Modal>
     </div>

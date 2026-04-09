@@ -5,6 +5,7 @@ import UserAuth from "../../../../assets/UserAuth.png";
 import { FaArrowLeft } from "react-icons/fa";
 import Modal from "react-modal";
 import { FaCheckCircle, FaTimesCircle } from "react-icons/fa";
+import api from "../../../../services/API";
 
 Modal.setAppElement("#root");
 
@@ -19,34 +20,46 @@ const UserForgotPassword = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    const { email, newpassword } = formData;
 
-    const users = JSON.parse(localStorage.getItem("ecoTrackUsers")) || [];
-    const userIndex = users.findIndex(user => user.email === formData.email);
-
-    if (userIndex !== -1) {
-      users[userIndex].password = formData.newpassword;
-      localStorage.setItem("ecoTrackUsers", JSON.stringify(users));
-      
-      setModalStatus("success");
-      setModalMessage("Password reset successful! Please log in.");
-      setModalIsOpen(true);
-      
-      setTimeout(() => {
-        navigate("/login");
-      }, 3000);
-    } else {
+    const passwordRegex = /^.{4,}$/;
+    if (!passwordRegex.test(newpassword)) {
       setModalStatus("error");
-      setModalMessage("Email not found. Please register first.");
+      setModalMessage("New password must be at least 4 characters long.");
       setModalIsOpen(true);
+      setTimeout(() => setModalIsOpen(false), 3000);
+      return;
+    }
+
+    try {
+      const response = await api.post("/forgot-password", {
+        email: email,
+        newPassword: newpassword,
+      });
+      if (response.status === 200) {
+        setModalStatus("success");
+        setModalMessage("Password reset successful! Please log in.");
+        setModalIsOpen(true);
+        setTimeout(() => {
+          navigate("/login");
+        }, 3000);
+      } else {
+        throw new Error("Reset failed");
+      }
+    } catch (error) {
+      setModalStatus("error");
+      setModalMessage(error.response?.data?.error || "Email not found or reset failed.");
+      setModalIsOpen(true);
+      setTimeout(() => setModalIsOpen(false), 3000);
     }
   };
 
   const handleGoToLogin = () => navigate("/login");
   const handleGoBack = () => navigate("/home");
   const handleGoogleReset = () => {
-    alert("Google password reset - integrate OAuth");
+    window.location.href = 'http://localhost:3000/api/auth/google'
   };
 
   return (
@@ -184,7 +197,7 @@ const UserForgotPassword = () => {
         onRequestClose={() => setModalIsOpen(false)}
         contentLabel="Password Reset Status Modal"
         className="bg-white w-80 max-w-md mx-auto p-6 rounded-lg shadow-lg outline-none flex flex-col items-center text-center"
-        overlayClassName="fixed inset-0 bg-black bg-opacity-30 flex justify-center items-center z-50"
+        overlayClassName="fixed inset-0 bg-opacity-100 backdrop-blur-sm flex justify-center items-center z-50"
       >
         <div className="text-5xl mb-4">
           {modalStatus === "success" ? (

@@ -5,6 +5,7 @@ import UserRegister from "../../pages/Auth/UserAuth/UserRegister/UserRegister";
 import AdminRegister from "../../pages/Auth/AdminAuth/AdminRegister/AdminRegister";
 import UserForgotPassword from "../../pages/Auth/UserAuth/UserForgotPassword/UserForgotPassword";
 import AdminForgotPassword from "../../pages/Auth/AdminAuth/AdminForgotPassword/AdminForgotPassword";
+import OAuthRedirect from "../../components/OAuthRedirect";
 
 const AuthRoutes = () => {
   return (
@@ -16,6 +17,7 @@ const AuthRoutes = () => {
            <Route path="/admin-register" element={<AdminRegister />} />
            <Route path="/forgot-password" element={<UserForgotPassword />} />
            <Route path="/admin-forgot-password" element={<AdminForgotPassword />} />
+           <Route path="/oauth-redirect" element={<OAuthRedirect />} />
         </Routes>
     </>
   )

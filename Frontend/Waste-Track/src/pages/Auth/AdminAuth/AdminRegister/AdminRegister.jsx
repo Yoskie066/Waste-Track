@@ -5,14 +5,15 @@ import UserAuth from "../../../../assets/UserAuth.png";
 import { FaArrowLeft } from "react-icons/fa";
 import Modal from "react-modal";
 import { FaCheckCircle, FaTimesCircle } from "react-icons/fa";
+import adminApi from "../../../../services/adminApi";
 
 Modal.setAppElement("#root");
 
 const AdminRegister = () => {
-  const [formData, setFormData] = useState({ 
-    email: "", 
-    password: "", 
-    confirmPassword: "" 
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+    confirmPassword: "",
   });
   const navigate = useNavigate();
   const [modalIsOpen, setModalIsOpen] = useState(false);
@@ -26,62 +27,47 @@ const AdminRegister = () => {
   const handleGoToLogin = () => navigate("/admin-login");
   const handleGoBack = () => navigate("/home");
   const handleGoogleRegister = () => {
-    alert("Google registration for admin - integrate OAuth");
+    window.location.href = 'http://localhost:3000/api/auth/google/admin';
   };
 
-  const generateRandomId = () => {
-    return Math.floor(1000000000 + Math.random() * 9000000000).toString();
-  };
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const { email, password, confirmPassword } = formData;
+
+    if (password.length < 4) {
+      setModalStatus("error");
+      setModalMessage("Password must be at least 4 characters long.");
+      setModalIsOpen(true);
+      setTimeout(() => setModalIsOpen(false), 3000);
+      return;
+    }
 
     if (password !== confirmPassword) {
       setModalStatus("error");
       setModalMessage("Passwords do not match!");
       setModalIsOpen(true);
+      setTimeout(() => setModalIsOpen(false), 3000);
       return;
     }
 
-    const existingAdmins = JSON.parse(localStorage.getItem("ecoTrackAdmins")) || [];
-
-    const emailExists = existingAdmins.some(admin => admin.email === email);
-    if (emailExists) {
+    try {
+      const response = await adminApi.post("/register", { email, password });
+      if (response.status === 201) {
+        setModalStatus("success");
+        setModalMessage("Admin registration successful! Redirecting to login...");
+        setModalIsOpen(true);
+        setTimeout(() => {
+          navigate("/admin-login");
+        }, 3000);
+      } else {
+        throw new Error("Registration failed");
+      }
+    } catch (error) {
       setModalStatus("error");
-      setModalMessage("Admin email already registered.");
+      setModalMessage(error.response?.data?.error || "Registration failed. Email may already exist.");
       setModalIsOpen(true);
-      return;
+      setTimeout(() => setModalIsOpen(false), 3000);
     }
-
-    const currentDate = new Date();
-    const formattedDate = currentDate.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-
-    const adminId = generateRandomId();
-
-    const newAdmin = { 
-      id: adminId,
-      email, 
-      password,
-      dateRegistered: formattedDate 
-    };
-
-    const updatedAdmins = [...existingAdmins, newAdmin];
-    localStorage.setItem("ecoTrackAdmins", JSON.stringify(updatedAdmins));
-
-    setModalStatus("success");
-    setModalMessage("Admin registration successful!");
-    setModalIsOpen(true);
-
-    setTimeout(() => {
-      navigate("/admin-login");
-    }, 3000);
   };
 
   return (
@@ -232,7 +218,7 @@ const AdminRegister = () => {
         onRequestClose={() => setModalIsOpen(false)}
         contentLabel="Registration Status Modal"
         className="bg-white w-80 max-w-md mx-auto p-6 rounded-lg shadow-lg outline-none flex flex-col items-center text-center"
-        overlayClassName="fixed inset-0 bg-black bg-opacity-30 flex justify-center items-center z-50"
+        overlayClassName="fixed inset-0 bg-opacity-100 backdrop-blur-sm flex justify-center items-center z-50"
       >
         <div className="text-5xl mb-4">
           {modalStatus === "success" ? (
