@@ -5,7 +5,7 @@ import UserAuth from "../../../../assets/UserAuth.png";
 import { FaArrowLeft } from "react-icons/fa";
 import Modal from "react-modal";
 import { FaCheckCircle, FaTimesCircle } from "react-icons/fa";
-import api from "../../../../services/API";
+import api from "../../../../services/api";
 
 Modal.setAppElement("#root");
 

@@ -1,5 +1,6 @@
 import multer from 'multer';
 
+// Use memory storage so we don't need to manage temp files
 const storage = multer.memoryStorage();
 
 const fileFilter = (req, file, cb) => {
@@ -12,7 +13,7 @@ const fileFilter = (req, file, cb) => {
 
 const upload = multer({
   storage,
-  limits: { fileSize: 5 * 1024 * 1024 },
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
   fileFilter
 });
 

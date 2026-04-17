@@ -24,7 +24,6 @@ const AdminLogin = () => {
     e.preventDefault();
     const { email, password } = formData;
 
-    // Password minimum 4 characters validation
     if (password.length < 4) {
       setModalStatus("error");
       setModalMessage("Password must be at least 4 characters long.");
@@ -38,6 +37,10 @@ const AdminLogin = () => {
       if (response.data.accessToken) {
         localStorage.setItem("adminAccessToken", response.data.accessToken);
         localStorage.setItem("adminRefreshToken", response.data.refreshToken);
+        // Store admin data
+        const adminData = response.data.user;
+        localStorage.setItem("ecoTrackCurrentAdmin", JSON.stringify(adminData));
+        
         setModalStatus("success");
         setModalMessage("Admin login successful! Redirecting...");
         setModalIsOpen(true);
@@ -59,8 +62,8 @@ const AdminLogin = () => {
   const handleGoToForgotPassword = () => navigate("/admin-forgot-password");
   const handleGoBack = () => navigate("/home");
   const handleGoogleLogin = () => {
-  window.location.href = 'http://localhost:3000/api/auth/google/admin';
-};
+    window.location.href = 'http://localhost:3000/api/auth/google/admin';
+  };
 
   return (
     <div className="py-20 px-6 max-w-6xl mx-auto bg-white text-black">

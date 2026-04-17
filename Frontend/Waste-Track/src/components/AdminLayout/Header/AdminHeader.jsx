@@ -1,3 +1,4 @@
+// frontend/src/components/AdminHeader.jsx
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
@@ -14,17 +15,18 @@ import {
 export default function AdminHeader() {
   const [isOpen, setIsOpen] = useState(false);
 
-  // Get admin data from localStorage
   const adminDataRaw = localStorage.getItem("ecoTrackCurrentAdmin");
   const adminData = adminDataRaw ? JSON.parse(adminDataRaw) : null;
   const adminEmail = adminData?.email || "Admin";
+  const adminAvatar = adminData?.avatar_url || null;
   const adminInitial = adminEmail.charAt(0).toUpperCase();
 
   const navigate = useNavigate();
 
   const handleLogout = () => {
     localStorage.removeItem("ecoTrackCurrentAdmin");
-    localStorage.removeItem("ecoTrackCurrentAdminEmail");
+    localStorage.removeItem("adminAccessToken");
+    localStorage.removeItem("adminRefreshToken");
     navigate("/admin-login");
   };
 
@@ -39,12 +41,10 @@ export default function AdminHeader() {
     <header className="fixed top-0 w-full bg-white/80 backdrop-blur-md z-50 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          {/* Logo */}
           <Link to="/analytics" className="flex-shrink-0 focus:outline-none">
             <h1 className="text-2xl font-bold text-green-600">WasteTrack</h1>
           </Link>
 
-          {/* Desktop Navigation */}
           <div className="hidden lg:flex items-center space-x-8">
             {navLinks.map(({ name, path, icon: Icon }) => (
               <Link
@@ -65,15 +65,21 @@ export default function AdminHeader() {
             </button>
           </div>
 
-          {/* Desktop Admin Profile */}
           <div className="hidden lg:flex items-center ml-4 space-x-2">
-            <div className="w-8 h-8 bg-green-600 text-white rounded-full flex items-center justify-center font-bold">
-              {adminInitial}
-            </div>
+            {adminAvatar ? (
+              <img
+                src={adminAvatar}
+                alt="Admin Avatar"
+                className="w-8 h-8 rounded-full object-cover"
+              />
+            ) : (
+              <div className="w-8 h-8 bg-green-600 text-white rounded-full flex items-center justify-center font-bold">
+                {adminInitial}
+              </div>
+            )}
             <span className="text-sm text-gray-700">{adminEmail}</span>
           </div>
 
-          {/* Mobile Menu Button */}
           <div className="lg:hidden flex items-center">
             <button
               onClick={() => setIsOpen(!isOpen)}
@@ -86,15 +92,21 @@ export default function AdminHeader() {
         </div>
       </div>
 
-      {/* Mobile Dropdown Menu (glassmorphism) */}
       {isOpen && (
         <div className="lg:hidden bg-white/80 backdrop-blur-md shadow-sm">
           <div className="px-2 pt-2 pb-3 space-y-1">
-            {/* Admin profile in mobile menu */}
             <div className="flex items-center space-x-3 px-3 py-2 border-b border-gray-200 mb-2">
-              <div className="w-8 h-8 bg-green-600 text-white rounded-full flex items-center justify-center font-bold">
-                {adminInitial}
-              </div>
+              {adminAvatar ? (
+                <img
+                  src={adminAvatar}
+                  alt="Admin Avatar"
+                  className="w-8 h-8 rounded-full object-cover"
+                />
+              ) : (
+                <div className="w-8 h-8 bg-green-600 text-white rounded-full flex items-center justify-center font-bold">
+                  {adminInitial}
+                </div>
+              )}
               <span className="text-sm text-gray-700">{adminEmail}</span>
             </div>
             {navLinks.map(({ name, path, icon: Icon }) => (

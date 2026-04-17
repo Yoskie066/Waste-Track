@@ -5,7 +5,7 @@ import UserAuth from "../../../../assets/UserAuth.png";
 import { FaArrowLeft } from "react-icons/fa";
 import Modal from "react-modal";
 import { FaCheckCircle, FaTimesCircle } from "react-icons/fa";
-import api from "../../../../services/API";
+import api from "../../../../services/api";
 
 Modal.setAppElement("#root");
 
@@ -24,9 +24,7 @@ const UserLogin = () => {
     e.preventDefault();
     const { email, password } = formData;
 
-    // Password minimum 4 characters validation
-    const passwordRegex = /^.{4,}$/;
-    if (!passwordRegex.test(password)) {
+    if (password.length < 4) {
       setModalStatus("error");
       setModalMessage("Password must be at least 4 characters long.");
       setModalIsOpen(true);
@@ -39,6 +37,9 @@ const UserLogin = () => {
       if (response.data.accessToken) {
         localStorage.setItem("accessToken", response.data.accessToken);
         localStorage.setItem("refreshToken", response.data.refreshToken);
+        const userData = response.data.user;
+        localStorage.setItem("ecoTrackCurrentUser", JSON.stringify(userData));
+        
         setModalStatus("success");
         setModalMessage("Login successful! Redirecting...");
         setModalIsOpen(true);
@@ -60,8 +61,8 @@ const UserLogin = () => {
   const handleGoToForgotPassword = () => navigate("/forgot-password");
   const handleGoBack = () => navigate("/home");
   const handleGoogleLogin = () => {
-  window.location.href = 'http://localhost:3000/api/auth/google';
-};
+    window.location.href = 'http://localhost:3000/api/auth/google';
+  };
 
   return (
     <div className="py-20 px-6 max-w-6xl mx-auto bg-white text-black">
@@ -199,7 +200,6 @@ const UserLogin = () => {
         </motion.div>
       </div>
 
-      {/* Modal with white blurred overlay */}
       <Modal
         isOpen={modalIsOpen}
         onRequestClose={() => setModalIsOpen(false)}

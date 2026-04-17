@@ -1,3 +1,4 @@
+// backend/config/passport.js
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import bcrypt from 'bcryptjs';
@@ -23,16 +24,27 @@ passport.use(
       try {
         const email = profile.emails[0].value;
         const googleId = profile.id;
+        const avatarUrl = profile.photos?.[0]?.value || null;
 
         let user = await UserModel.findByEmail(email);
         if (!user) {
           const randomPassword = await generateRandomPassword();
-          const result = await UserModel.registerWithGoogle(email, randomPassword, googleId);
+          const result = await UserModel.registerWithGoogle(email, randomPassword, googleId, avatarUrl);
           if (result.error) return done(result.error, null);
           user = result.user;
         } else {
+          // Update google_id and avatar_url if needed
+          let needsUpdate = false;
           if (!user.google_id) {
-            await UserModel.updateGoogleId(email, googleId);
+            needsUpdate = true;
+          }
+          if (avatarUrl && user.avatar_url !== avatarUrl) {
+            needsUpdate = true;
+          }
+          if (needsUpdate) {
+            await UserModel.updateGoogleIdAndAvatar(email, googleId, avatarUrl);
+            // Refresh user data to get updated avatar_url
+            user = await UserModel.findByEmail(email);
           }
         }
         return done(null, user);
@@ -56,16 +68,21 @@ passport.use(
       try {
         const email = profile.emails[0].value;
         const googleId = profile.id;
+        const avatarUrl = profile.photos?.[0]?.value || null;
 
         let admin = await AdminModel.findByEmail(email);
         if (!admin) {
           const randomPassword = await generateRandomPassword();
-          const result = await AdminModel.registerWithGoogle(email, randomPassword, googleId);
+          const result = await AdminModel.registerWithGoogle(email, randomPassword, googleId, avatarUrl);
           if (result.error) return done(result.error, null);
           admin = result.admin;
         } else {
-          if (!admin.google_id) {
-            await AdminModel.updateGoogleId(email, googleId);
+          let needsUpdate = false;
+          if (!admin.google_id) needsUpdate = true;
+          if (avatarUrl && admin.avatar_url !== avatarUrl) needsUpdate = true;
+          if (needsUpdate) {
+            await AdminModel.updateGoogleIdAndAvatar(email, googleId, avatarUrl);
+            admin = await AdminModel.findByEmail(email);
           }
         }
         return done(null, admin);

@@ -1,3 +1,4 @@
+// frontend/src/pages/OAuthRedirect.jsx
 import { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
@@ -6,14 +7,13 @@ const OAuthRedirect = () => {
   const location = useLocation();
 
   useEffect(() => {
-    console.log("OAuthRedirect mounted");
-    console.log("Full URL:", window.location.href);
-
     const queryParams = new URLSearchParams(location.search);
     const accessToken = queryParams.get('accessToken');
     const refreshToken = queryParams.get('refreshToken');
     const role = queryParams.get('role');
     const error = queryParams.get('error');
+    const email = queryParams.get('email');
+    const avatar = queryParams.get('avatar');
 
     if (error) {
       console.error('OAuth error:', error);
@@ -22,14 +22,17 @@ const OAuthRedirect = () => {
     }
 
     if (accessToken && refreshToken) {
-      console.log("Saving tokens for role:", role);
       if (role === 'user') {
         localStorage.setItem('accessToken', accessToken);
         localStorage.setItem('refreshToken', refreshToken);
+        const userData = { email, avatar_url: avatar || null };
+        localStorage.setItem('ecoTrackCurrentUser', JSON.stringify(userData));
         navigate('/dashboard');
       } else if (role === 'admin') {
         localStorage.setItem('adminAccessToken', accessToken);
         localStorage.setItem('adminRefreshToken', refreshToken);
+        const adminData = { email, avatar_url: avatar || null };
+        localStorage.setItem('ecoTrackCurrentAdmin', JSON.stringify(adminData));
         navigate('/analytics');
       } else {
         navigate('/');

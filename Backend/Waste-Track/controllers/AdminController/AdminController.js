@@ -1,3 +1,4 @@
+// backend/controllers/AdminController/AdminController.js
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import pool from '../../config/db.js';
@@ -33,7 +34,6 @@ class AdminController {
   static async login(req, res) {
     const { email, password } = req.body;
     try {
-      // 1. Check if this email belongs to a user (cross‑role block)
       const client = await pool.connect();
       let userExists = false;
       try {
@@ -50,7 +50,6 @@ class AdminController {
         return res.status(401).json({ error: 'This email is registered as user. Please login from User Portal.' });
       }
 
-      // 2. Proceed with normal admin login
       const admin = await AdminModel.findByEmail(email);
       if (!admin) return res.status(401).json({ error: 'Invalid credentials' });
 
@@ -70,7 +69,16 @@ class AdminController {
         dbClient.release();
       }
 
-      res.status(200).json({ message: 'Admin login successful', accessToken, refreshToken });
+      res.status(200).json({
+        message: 'Admin login successful',
+        accessToken,
+        refreshToken,
+        user: {
+          id: admin.id,
+          email: admin.email,
+          avatar_url: admin.avatar_url
+        }
+      });
     } catch (err) {
       console.error("DB Insert Error:", err);
       res.status(500).json({ error: 'Server error during login', details: err.message });
@@ -130,7 +138,8 @@ class AdminController {
       res.status(200).json({
         id: admin.id,
         email: admin.email,
-        created_at: admin.created_at
+        created_at: admin.created_at,
+        avatar_url: admin.avatar_url
       });
     } catch (err) {
       console.error("Profile Error:", err);
@@ -138,24 +147,24 @@ class AdminController {
     }
   }
 
-    static async googleCallback(req, res) {
+  static async googleCallback(req, res) {
     try {
       const admin = req.user;
       if (!admin) {
         return res.redirect(`${process.env.FRONTEND_URL}/admin-login?error=no_admin`);
       }
-  
+
       const accessToken = generateAccessToken(admin);
       const refreshToken = generateRefreshToken(admin);
-  
+
       const client = await pool.connect();
       await client.query(
         `INSERT INTO admin_refresh_tokens (token, admin_id) VALUES ($1, $2)`,
         [refreshToken, admin.id]
       );
       client.release();
-  
-      const redirectUrl = `${process.env.FRONTEND_URL}/oauth-redirect?accessToken=${accessToken}&refreshToken=${refreshToken}&role=admin`;
+
+      const redirectUrl = `${process.env.FRONTEND_URL}/oauth-redirect?accessToken=${accessToken}&refreshToken=${refreshToken}&role=admin&email=${encodeURIComponent(admin.email)}&avatar=${encodeURIComponent(admin.avatar_url || '')}`;
       console.log('Redirecting admin to:', redirectUrl);
       res.redirect(redirectUrl);
     } catch (err) {

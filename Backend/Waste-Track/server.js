@@ -5,6 +5,7 @@ import initDb from './database/initDb.js';
 import UserRoutes from './routes/UserRoutes/UserRoutes.js';
 import AdminRoutes from './routes/AdminRoutes/AdminRoutes.js';
 import googleAuthRoutes from './routes/GoogleAuthRoutes/googleAuthRoutes.js';
+import locationRoutes from './routes/LocationRoutes/locationRoutes.js';
 import passport from './config/passport.js';
 
 dotenv.config();
@@ -23,6 +24,7 @@ const startServer = async () => {
     app.use('/api/users', UserRoutes);
     app.use('/api/admin', AdminRoutes);
     app.use('/api', googleAuthRoutes); 
+    app.use('/api/location', locationRoutes);
 
     app.get('/', (req, res) => {
       res.send('WasteTrack API is running...');
