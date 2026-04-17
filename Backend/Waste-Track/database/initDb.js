@@ -60,7 +60,7 @@ const initDb = async () => {
       );
     `);
 
-    // Insert
+    // Insert trigger for collect_waste
     await client.query(`
       CREATE OR REPLACE FUNCTION sync_collect_insert()
       RETURNS TRIGGER AS $$
@@ -84,7 +84,7 @@ const initDb = async () => {
       EXECUTE FUNCTION sync_collect_insert();
     `);
 
-    // Update
+    // Update trigger for collect_waste
     await client.query(`
       CREATE OR REPLACE FUNCTION sync_collect_update()
       RETURNS TRIGGER AS $$
@@ -111,7 +111,7 @@ const initDb = async () => {
       EXECUTE FUNCTION sync_collect_update();
     `);
 
-    // Delete
+    // Delete trigger for collect_waste
     await client.query(`
       CREATE OR REPLACE FUNCTION sync_collect_delete()
       RETURNS TRIGGER AS $$
@@ -163,7 +163,7 @@ const initDb = async () => {
       );
     `);
 
-    // Trigger for report_waste insert
+    // Insert trigger for report_waste
     await client.query(`
       CREATE OR REPLACE FUNCTION sync_report_insert()
         RETURNS TRIGGER AS $$
@@ -187,7 +187,7 @@ const initDb = async () => {
       EXECUTE FUNCTION sync_report_insert();
     `);
 
-    // Trigger for report_waste update
+    // Update trigger for report_waste
     await client.query(`
       CREATE OR REPLACE FUNCTION sync_report_update()
       RETURNS TRIGGER AS $$
@@ -215,7 +215,7 @@ const initDb = async () => {
       EXECUTE FUNCTION sync_report_update();
     `);
 
-    // Trigger for report_waste delete
+    // Delete trigger for report_waste
     await client.query(`
       CREATE OR REPLACE FUNCTION sync_report_delete()
         RETURNS TRIGGER AS $$
@@ -260,6 +260,107 @@ const initDb = async () => {
         admin_id INTEGER NOT NULL REFERENCES "Admins-Login"(id) ON DELETE CASCADE,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
+    `);
+
+    // ----- Dashboard Summary tables -----
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS dashboard_summary (
+        id SERIAL PRIMARY KEY,
+        useremail TEXT NOT NULL,
+        year INT NOT NULL,
+        month INT NOT NULL,
+        collected_count INT DEFAULT 0,
+        reported_count INT DEFAULT 0,
+        UNIQUE (useremail, year, month)
+      );
+    `);
+
+    // Function to update dashboard_summary 
+    await client.query(`
+      CREATE OR REPLACE FUNCTION update_dashboard_summary_collect()
+      RETURNS TRIGGER AS $$
+      DECLARE
+        v_year INT;
+        v_month INT;
+        v_useremail TEXT;
+        v_collected_count INT;
+      BEGIN
+        IF TG_OP = 'DELETE' THEN
+          v_useremail := OLD.useremail;
+          v_year := EXTRACT(YEAR FROM OLD.dateCollected)::INT;
+          v_month := EXTRACT(MONTH FROM OLD.dateCollected)::INT;
+        ELSE
+          v_useremail := NEW.useremail;
+          v_year := EXTRACT(YEAR FROM NEW.dateCollected)::INT;
+          v_month := EXTRACT(MONTH FROM NEW.dateCollected)::INT;
+        END IF;
+
+        SELECT COALESCE(COUNT(*), 0) INTO v_collected_count
+        FROM collect_waste
+        WHERE useremail = v_useremail
+          AND EXTRACT(YEAR FROM dateCollected) = v_year
+          AND EXTRACT(MONTH FROM dateCollected) = v_month;
+
+        INSERT INTO dashboard_summary (useremail, year, month, collected_count, reported_count)
+        VALUES (v_useremail, v_year, v_month, v_collected_count, 0)
+        ON CONFLICT (useremail, year, month)
+        DO UPDATE SET collected_count = EXCLUDED.collected_count;
+
+        RETURN NULL;
+      END;
+      $$ LANGUAGE plpgsql;
+    `);
+
+    await client.query(`DROP TRIGGER IF EXISTS dashboard_collect_trigger ON collect_waste;`);
+    await client.query(`
+      CREATE TRIGGER dashboard_collect_trigger
+      AFTER INSERT OR UPDATE OR DELETE ON collect_waste
+      FOR EACH ROW
+      EXECUTE FUNCTION update_dashboard_summary_collect();
+    `);
+
+    // Function for report_waste 
+    await client.query(`
+      CREATE OR REPLACE FUNCTION update_dashboard_summary_report()
+      RETURNS TRIGGER AS $$
+      DECLARE
+        v_year INT;
+        v_month INT;
+        v_useremail TEXT;
+        v_reported_count INT;
+      BEGIN
+        IF TG_OP = 'DELETE' THEN
+          v_useremail := OLD.useremail;
+          v_year := EXTRACT(YEAR FROM OLD.dateReported)::INT;
+          v_month := EXTRACT(MONTH FROM OLD.dateReported)::INT;
+        ELSE
+          v_useremail := NEW.useremail;
+          v_year := EXTRACT(YEAR FROM NEW.dateReported)::INT;
+          v_month := EXTRACT(MONTH FROM NEW.dateReported)::INT;
+        END IF;
+
+        SELECT COALESCE(COUNT(*), 0) INTO v_reported_count
+        FROM report_waste
+        WHERE useremail = v_useremail
+          AND EXTRACT(YEAR FROM dateReported) = v_year
+          AND EXTRACT(MONTH FROM dateReported) = v_month;
+
+        INSERT INTO dashboard_summary (useremail, year, month, collected_count, reported_count)
+        VALUES (v_useremail, v_year, v_month, 0, v_reported_count)
+        ON CONFLICT (useremail, year, month)
+        DO UPDATE SET reported_count = EXCLUDED.reported_count;
+
+        RETURN NULL;
+      END;
+      $$ LANGUAGE plpgsql;
+    `);
+
+    await client.query(`DROP TRIGGER IF EXISTS dashboard_report_trigger ON report_waste;`);
+    await client.query(`
+      CREATE TRIGGER dashboard_report_trigger
+      AFTER INSERT OR UPDATE OR DELETE ON report_waste
+      FOR EACH ROW
+      EXECUTE FUNCTION update_dashboard_summary_report();
     `);
 
     console.log('All tables created / verified successfully');
