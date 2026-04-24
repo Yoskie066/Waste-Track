@@ -3,7 +3,7 @@ import pool from '../config/db.js';
 const initDb = async () => {
   const client = await pool.connect();
   try {
-    // ----- Users tables -----
+    // ======================= 1. Users Tables =======================
     await client.query(`
       CREATE TABLE IF NOT EXISTS "Users-Login" (
         id SERIAL PRIMARY KEY,
@@ -30,212 +30,6 @@ const initDb = async () => {
       )
     `);
 
-    // ----- Collect Waste tables -----
-    await client.query(`
-      CREATE TABLE IF NOT EXISTS collect_waste (
-        id SERIAL PRIMARY KEY,
-        userEmail TEXT NOT NULL,
-        wasteName TEXT NOT NULL,
-        category TEXT NOT NULL,
-        subCategory TEXT NOT NULL,
-        quantity REAL NOT NULL,
-        unit TEXT NOT NULL,
-        dateCollected DATE NOT NULL,
-        description TEXT NOT NULL,
-        photoUrl TEXT NOT NULL
-      );
-    `);
-
-    await client.query(`
-      CREATE TABLE IF NOT EXISTS collect_waste_timeline (
-        id SERIAL PRIMARY KEY,
-        waste_id INT UNIQUE REFERENCES collect_waste(id) ON DELETE CASCADE,
-        useremail TEXT NOT NULL,
-        wastename TEXT NOT NULL,
-        datecollected DATE NOT NULL,
-        yearcollected INT NOT NULL,
-        description TEXT NOT NULL,
-        photourl TEXT NOT NULL,
-        UNIQUE (useremail, wastename, datecollected)
-      );
-    `);
-
-    // Insert trigger for collect_waste
-    await client.query(`
-      CREATE OR REPLACE FUNCTION sync_collect_insert()
-      RETURNS TRIGGER AS $$
-      BEGIN
-        INSERT INTO collect_waste_timeline
-          (waste_id, useremail, wastename, datecollected, yearcollected, description, photourl)
-        VALUES
-          (NEW.id, NEW.useremail, NEW.wastename, NEW.datecollected, EXTRACT(YEAR FROM NEW.datecollected)::INT, NEW.description, NEW.photourl)
-        ON CONFLICT (waste_id) DO NOTHING;
-
-        RETURN NEW;
-      END;
-      $$ LANGUAGE plpgsql;
-    `);
-
-    await client.query(`DROP TRIGGER IF EXISTS after_collect_insert ON collect_waste;`);
-    await client.query(`
-      CREATE TRIGGER after_collect_insert
-      AFTER INSERT ON collect_waste
-      FOR EACH ROW
-      EXECUTE FUNCTION sync_collect_insert();
-    `);
-
-    // Update trigger for collect_waste
-    await client.query(`
-      CREATE OR REPLACE FUNCTION sync_collect_update()
-      RETURNS TRIGGER AS $$
-      BEGIN
-        UPDATE collect_waste_timeline
-        SET useremail    = NEW.useremail,
-            wastename    = NEW.wastename,
-            datecollected = NEW.datecollected,
-            yearcollected = EXTRACT(YEAR FROM NEW.datecollected)::INT,
-            description   = NEW.description,
-            photourl      = NEW.photourl
-        WHERE waste_id = NEW.id;
-      
-        RETURN NEW;
-      END;
-      $$ LANGUAGE plpgsql;
-    `);
-
-    await client.query(`DROP TRIGGER IF EXISTS after_collect_update ON collect_waste;`);
-    await client.query(`
-      CREATE TRIGGER after_collect_update
-      AFTER UPDATE ON collect_waste
-      FOR EACH ROW
-      EXECUTE FUNCTION sync_collect_update();
-    `);
-
-    // Delete trigger for collect_waste
-    await client.query(`
-      CREATE OR REPLACE FUNCTION sync_collect_delete()
-      RETURNS TRIGGER AS $$
-      BEGIN
-        DELETE FROM collect_waste_timeline
-        WHERE waste_id = OLD.id;
-
-        RETURN OLD;
-      END;
-      $$ LANGUAGE plpgsql;
-    `);
-
-    await client.query(`DROP TRIGGER IF EXISTS after_collect_delete ON collect_waste;`);
-    await client.query(`
-      CREATE TRIGGER after_collect_delete
-      AFTER DELETE ON collect_waste
-      FOR EACH ROW
-      EXECUTE FUNCTION sync_collect_delete();
-    `);
-
-    // ----- Report Waste tables -----
-    await client.query(`
-      CREATE TABLE IF NOT EXISTS report_waste (
-        id SERIAL PRIMARY KEY,
-        userEmail TEXT NOT NULL,
-        wasteName TEXT NOT NULL,
-        category TEXT NOT NULL,
-        subCategory TEXT NOT NULL,
-        color TEXT NOT NULL,
-        location TEXT NOT NULL,
-        dateReported DATE NOT NULL,
-        description TEXT NOT NULL,
-        photoUrl TEXT NOT NULL
-      );
-    `);
-
-    await client.query(`
-      CREATE TABLE IF NOT EXISTS report_waste_timeline (
-        id SERIAL PRIMARY KEY,
-        report_id INT UNIQUE REFERENCES report_waste(id) ON DELETE CASCADE,
-        useremail TEXT NOT NULL,
-        wastename TEXT NOT NULL,
-        datereported DATE NOT NULL,
-        year_reported INT NOT NULL,
-        location TEXT NOT NULL,
-        description TEXT NOT NULL,
-        photourl TEXT NOT NULL,
-        UNIQUE (useremail, wastename, datereported)
-      );
-    `);
-
-    // Insert trigger for report_waste
-    await client.query(`
-      CREATE OR REPLACE FUNCTION sync_report_insert()
-        RETURNS TRIGGER AS $$
-        BEGIN
-          INSERT INTO report_waste_timeline
-            (report_id, useremail, wastename, datereported, year_reported, location, description, photourl)
-          VALUES
-            (NEW.id, NEW.useremail, NEW.wastename, NEW.datereported, EXTRACT(YEAR FROM NEW.datereported)::INT, NEW.location, NEW.description, NEW.photourl)
-          ON CONFLICT (report_id) DO NOTHING;
-        
-          RETURN NEW;
-        END;
-        $$ LANGUAGE plpgsql;
-      `);
-
-    await client.query(`DROP TRIGGER IF EXISTS after_report_insert ON report_waste;`);
-    await client.query(`
-      CREATE TRIGGER after_report_insert
-      AFTER INSERT ON report_waste
-      FOR EACH ROW
-      EXECUTE FUNCTION sync_report_insert();
-    `);
-
-    // Update trigger for report_waste
-    await client.query(`
-      CREATE OR REPLACE FUNCTION sync_report_update()
-      RETURNS TRIGGER AS $$
-      BEGIN
-          UPDATE report_waste_timeline
-          SET useremail    = NEW.useremail,
-              wastename    = NEW.wastename,
-              datereported = NEW.datereported,
-              year_reported= EXTRACT(YEAR FROM NEW.datereported)::INT,
-              location     = NEW.location,
-              description  = NEW.description,
-              photourl     = NEW.photourl
-          WHERE report_id = OLD.id;
-      
-          RETURN NEW;
-      END;
-      $$ LANGUAGE plpgsql;
-    `);
-
-    await client.query(`DROP TRIGGER IF EXISTS after_report_update ON report_waste;`);
-    await client.query(`
-      CREATE TRIGGER after_report_update
-      AFTER UPDATE ON report_waste
-      FOR EACH ROW
-      EXECUTE FUNCTION sync_report_update();
-    `);
-
-    // Delete trigger for report_waste
-    await client.query(`
-      CREATE OR REPLACE FUNCTION sync_report_delete()
-        RETURNS TRIGGER AS $$
-        BEGIN
-            DELETE FROM report_waste_timeline
-            WHERE report_id = OLD.id;
-            RETURN OLD;
-        END;
-        $$ LANGUAGE plpgsql;
-    `);
-
-    await client.query(`DROP TRIGGER IF EXISTS after_report_delete ON report_waste;`);
-    await client.query(`
-      CREATE TRIGGER after_report_delete
-      AFTER DELETE ON report_waste
-      FOR EACH ROW
-      EXECUTE FUNCTION sync_report_delete();
-    `);
-
-    // ----- Admin tables -----
     await client.query(`
       CREATE TABLE IF NOT EXISTS "Admins-Login" (
         id SERIAL PRIMARY KEY,
@@ -262,7 +56,7 @@ const initDb = async () => {
       )
     `);
 
-    // ----- Dashboard Summary tables -----
+    // ======================= 2. Dashboard Summary Table =======================
     await client.query(`
       CREATE TABLE IF NOT EXISTS dashboard_summary (
         id SERIAL PRIMARY KEY,
@@ -272,10 +66,205 @@ const initDb = async () => {
         collected_count INT DEFAULT 0,
         reported_count INT DEFAULT 0,
         UNIQUE (useremail, year, month)
-      );
+      )
     `);
 
-    // Function to update dashboard_summary 
+    // ======================= 3. Collect Waste Tables & Triggers =======================
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS collect_waste (
+        id SERIAL PRIMARY KEY,
+        userEmail TEXT NOT NULL,
+        wasteName TEXT NOT NULL,
+        category TEXT NOT NULL,
+        subCategory TEXT NOT NULL,
+        quantity REAL NOT NULL,
+        unit TEXT NOT NULL,
+        dateCollected DATE NOT NULL,
+        description TEXT NOT NULL,
+        photoUrl TEXT NOT NULL
+      )
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS collect_waste_timeline (
+        id SERIAL PRIMARY KEY,
+        waste_id INT UNIQUE REFERENCES collect_waste(id) ON DELETE CASCADE,
+        useremail TEXT NOT NULL,
+        wastename TEXT NOT NULL,
+        datecollected DATE NOT NULL,
+        yearcollected INT NOT NULL,
+        description TEXT NOT NULL,
+        photourl TEXT NOT NULL,
+        UNIQUE (useremail, wastename, datecollected)
+      )
+    `);
+
+    // Insert trigger for collect_waste -> timeline
+    await client.query(`
+      CREATE OR REPLACE FUNCTION sync_collect_insert()
+      RETURNS TRIGGER AS $$
+      BEGIN
+        INSERT INTO collect_waste_timeline
+          (waste_id, useremail, wastename, datecollected, yearcollected, description, photourl)
+        VALUES
+          (NEW.id, NEW.useremail, NEW.wastename, NEW.datecollected, EXTRACT(YEAR FROM NEW.datecollected)::INT, NEW.description, NEW.photourl)
+        ON CONFLICT (waste_id) DO NOTHING;
+        RETURN NEW;
+      END;
+      $$ LANGUAGE plpgsql;
+    `);
+    await client.query(`DROP TRIGGER IF EXISTS after_collect_insert ON collect_waste;`);
+    await client.query(`
+      CREATE TRIGGER after_collect_insert
+      AFTER INSERT ON collect_waste
+      FOR EACH ROW
+      EXECUTE FUNCTION sync_collect_insert();
+    `);
+
+    // Update trigger for collect_waste -> timeline
+    await client.query(`
+      CREATE OR REPLACE FUNCTION sync_collect_update()
+      RETURNS TRIGGER AS $$
+      BEGIN
+        UPDATE collect_waste_timeline
+        SET useremail    = NEW.useremail,
+            wastename    = NEW.wastename,
+            datecollected = NEW.datecollected,
+            yearcollected = EXTRACT(YEAR FROM NEW.datecollected)::INT,
+            description   = NEW.description,
+            photourl      = NEW.photourl
+        WHERE waste_id = NEW.id;
+        RETURN NEW;
+      END;
+      $$ LANGUAGE plpgsql;
+    `);
+    await client.query(`DROP TRIGGER IF EXISTS after_collect_update ON collect_waste;`);
+    await client.query(`
+      CREATE TRIGGER after_collect_update
+      AFTER UPDATE ON collect_waste
+      FOR EACH ROW
+      EXECUTE FUNCTION sync_collect_update();
+    `);
+
+    // Delete trigger for collect_waste -> timeline
+    await client.query(`
+      CREATE OR REPLACE FUNCTION sync_collect_delete()
+      RETURNS TRIGGER AS $$
+      BEGIN
+        DELETE FROM collect_waste_timeline
+        WHERE waste_id = OLD.id;
+        RETURN OLD;
+      END;
+      $$ LANGUAGE plpgsql;
+    `);
+    await client.query(`DROP TRIGGER IF EXISTS after_collect_delete ON collect_waste;`);
+    await client.query(`
+      CREATE TRIGGER after_collect_delete
+      AFTER DELETE ON collect_waste
+      FOR EACH ROW
+      EXECUTE FUNCTION sync_collect_delete();
+    `);
+
+    // ======================= 4. Report Waste Tables & Triggers =======================
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS report_waste (
+        id SERIAL PRIMARY KEY,
+        userEmail TEXT NOT NULL,
+        wasteName TEXT NOT NULL,
+        category TEXT NOT NULL,
+        subCategory TEXT NOT NULL,
+        color TEXT NOT NULL,
+        location TEXT NOT NULL,
+        dateReported DATE NOT NULL,
+        description TEXT NOT NULL,
+        photoUrl TEXT NOT NULL
+      )
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS report_waste_timeline (
+        id SERIAL PRIMARY KEY,
+        report_id INT UNIQUE REFERENCES report_waste(id) ON DELETE CASCADE,
+        useremail TEXT NOT NULL,
+        wastename TEXT NOT NULL,
+        datereported DATE NOT NULL,
+        year_reported INT NOT NULL,
+        location TEXT NOT NULL,
+        description TEXT NOT NULL,
+        photourl TEXT NOT NULL,
+        UNIQUE (useremail, wastename, datereported)
+      )
+    `);
+
+    // Insert trigger for report_waste -> timeline
+    await client.query(`
+      CREATE OR REPLACE FUNCTION sync_report_insert()
+      RETURNS TRIGGER AS $$
+      BEGIN
+        INSERT INTO report_waste_timeline
+          (report_id, useremail, wastename, datereported, year_reported, location, description, photourl)
+        VALUES
+          (NEW.id, NEW.useremail, NEW.wastename, NEW.datereported, EXTRACT(YEAR FROM NEW.datereported)::INT, NEW.location, NEW.description, NEW.photourl)
+        ON CONFLICT (report_id) DO NOTHING;
+        RETURN NEW;
+      END;
+      $$ LANGUAGE plpgsql;
+    `);
+    await client.query(`DROP TRIGGER IF EXISTS after_report_insert ON report_waste;`);
+    await client.query(`
+      CREATE TRIGGER after_report_insert
+      AFTER INSERT ON report_waste
+      FOR EACH ROW
+      EXECUTE FUNCTION sync_report_insert();
+    `);
+
+    // Update trigger for report_waste -> timeline
+    await client.query(`
+      CREATE OR REPLACE FUNCTION sync_report_update()
+      RETURNS TRIGGER AS $$
+      BEGIN
+        UPDATE report_waste_timeline
+        SET useremail    = NEW.useremail,
+            wastename    = NEW.wastename,
+            datereported = NEW.datereported,
+            year_reported = EXTRACT(YEAR FROM NEW.datereported)::INT,
+            location     = NEW.location,
+            description  = NEW.description,
+            photourl     = NEW.photourl
+        WHERE report_id = OLD.id;
+        RETURN NEW;
+      END;
+      $$ LANGUAGE plpgsql;
+    `);
+    await client.query(`DROP TRIGGER IF EXISTS after_report_update ON report_waste;`);
+    await client.query(`
+      CREATE TRIGGER after_report_update
+      AFTER UPDATE ON report_waste
+      FOR EACH ROW
+      EXECUTE FUNCTION sync_report_update();
+    `);
+
+    // Delete trigger for report_waste -> timeline
+    await client.query(`
+      CREATE OR REPLACE FUNCTION sync_report_delete()
+      RETURNS TRIGGER AS $$
+      BEGIN
+        DELETE FROM report_waste_timeline
+        WHERE report_id = OLD.id;
+        RETURN OLD;
+      END;
+      $$ LANGUAGE plpgsql;
+    `);
+    await client.query(`DROP TRIGGER IF EXISTS after_report_delete ON report_waste;`);
+    await client.query(`
+      CREATE TRIGGER after_report_delete
+      AFTER DELETE ON report_waste
+      FOR EACH ROW
+      EXECUTE FUNCTION sync_report_delete();
+    `);
+
+    // ======================= 5. Dashboard Triggers (on collect_waste & report_waste) =======================
+    // Function for updates coming from collect_waste
     await client.query(`
       CREATE OR REPLACE FUNCTION update_dashboard_summary_collect()
       RETURNS TRIGGER AS $$
@@ -319,7 +308,7 @@ const initDb = async () => {
       EXECUTE FUNCTION update_dashboard_summary_collect();
     `);
 
-    // Function for report_waste 
+    // Function for updates coming from report_waste
     await client.query(`
       CREATE OR REPLACE FUNCTION update_dashboard_summary_report()
       RETURNS TRIGGER AS $$

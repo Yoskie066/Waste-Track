@@ -12,6 +12,7 @@ import DatePicker from "react-datepicker";
 import Modal from "react-modal";
 import { FaCheckCircle, FaTimesCircle } from "react-icons/fa";
 import debounce from "lodash.debounce";
+import { useNavigate, useLocation } from "react-router-dom";
 import { fetchLocationSuggestions } from "../../../services/locationApi";
 import "react-datepicker/dist/react-datepicker.css";
 import api from "../../../services/api";
@@ -47,7 +48,13 @@ const categoryData = {
 };
 
 const ReportWaste = () => {
-  const [editId, setEditId] = useState(null);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const editId = queryParams.get("editId");
+
+  const [loadingData, setLoadingData] = useState(!!editId);
+  const [editIdState, setEditIdState] = useState(null);
   const [wasteName, setWasteName] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [subCategory, setSubCategory] = useState("");
@@ -66,21 +73,38 @@ const ReportWaste = () => {
   const fileInputRef = useRef(null);
   const datePickerRef = useRef(null);
 
+  // Fetch data if edit mode (using URL query parameter)
   useEffect(() => {
-    const editItem = JSON.parse(localStorage.getItem("editReportedWaste"));
-    if (editItem) {
-      setWasteName(editItem.wasteName);
-      setSelectedCategory(editItem.selectedCategory);
-      setSubCategory(editItem.subCategory);
-      setColorInput(editItem.colorInput);
-      setLocationQuery(editItem.locationQuery);
-      setSelectedDate(new Date(editItem.dateReported));
-      setDescription(editItem.description);
-      setImagePreview(editItem.imageUrl);
-      setEditId(editItem.id);
-      localStorage.removeItem("editReportedWaste");
+    if (editId) {
+      const fetchReportData = async () => {
+        try {
+          const response = await api.get(`/report-waste/${editId}`);
+          if (response.data.success) {
+            const data = response.data.data;
+            setEditIdState(data.id);
+            setWasteName(data.wastename);
+            setSelectedCategory(data.category);
+            setSubCategory(data.subcategory);
+            setColorInput(data.color);
+            setLocationQuery(data.location);
+            setSelectedDate(new Date(data.datereported));
+            setDescription(data.description);
+            setImagePreview(data.photourl);
+          } else {
+            toast.error("Failed to load report data");
+            navigate("/waste-timeline");
+          }
+        } catch (error) {
+          console.error("Error fetching report data:", error);
+          toast.error("Error loading data for editing");
+          navigate("/waste-timeline");
+        } finally {
+          setLoadingData(false);
+        }
+      };
+      fetchReportData();
     }
-  }, []);
+  }, [editId, navigate]);
 
   const debouncedLocationFetch = useMemo(
     () =>
@@ -130,7 +154,7 @@ const ReportWaste = () => {
       setTimeout(() => setModalIsOpen(false), 3000);
       return;
     }
-    if (!editId && !imageFile) {
+    if (!editIdState && !imageFile) {
       setModalStatus("error");
       setModalMessage("Please select an image.");
       setModalIsOpen(true);
@@ -151,8 +175,8 @@ const ReportWaste = () => {
     setIsUploading(true);
     try {
       let response;
-      if (editId) {
-        response = await api.put(`/report-waste/${editId}`, formData, {
+      if (editIdState) {
+        response = await api.put(`/report-waste/${editIdState}`, formData, {
           headers: { "Content-Type": "multipart/form-data" },
         });
       } else {
@@ -163,7 +187,7 @@ const ReportWaste = () => {
       if (response.data.success) {
         setModalStatus("success");
         setModalMessage(
-          editId ? "Report updated successfully!" : "Waste reported successfully!"
+          editIdState ? "Report updated successfully!" : "Waste reported successfully!"
         );
         setModalIsOpen(true);
         // Reset form
@@ -176,10 +200,10 @@ const ReportWaste = () => {
         setDescription("");
         setImageFile(null);
         setImagePreview(null);
-        setEditId(null);
+        setEditIdState(null);
         setTimeout(() => {
           setModalIsOpen(false);
-          window.location.href = "/waste-timeline";
+          navigate("/waste-timeline");
         }, 2000);
       } else {
         throw new Error(response.data.message || "Submission failed");
@@ -197,7 +221,14 @@ const ReportWaste = () => {
     }
   };
 
-  // Modern input style
+  if (loadingData) {
+    return (
+      <div className="min-h-screen flex justify-center items-center bg-gradient-to-br from-emerald-50 via-teal-50 to-green-100">
+        <div className="animate-spin rounded-full h-14 w-14 border-t-4 border-b-4 border-green-600"></div>
+      </div>
+    );
+  }
+
   const inputStyle =
     "w-full border border-gray-300 rounded-xl px-4 py-3 text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 bg-white/80 backdrop-blur-sm";
   const dropdownStyle =
@@ -435,7 +466,7 @@ const ReportWaste = () => {
               onChange={handleImageChange}
             />
             <p className="text-xs text-gray-500 mt-1">
-              {editId
+              {editIdState
                 ? "Leave empty to keep current image"
                 : "Image required (max 5MB)"}
             </p>
@@ -455,7 +486,7 @@ const ReportWaste = () => {
                   <Loader2 className="animate-spin -ml-1 mr-2 h-5 w-5" />
                   Submitting...
                 </>
-              ) : editId ? (
+              ) : editIdState ? (
                 "Update Report"
               ) : (
                 "Report Waste"
@@ -465,7 +496,6 @@ const ReportWaste = () => {
         </motion.form>
       </motion.div>
 
-      {/* Modern Modal */}
       <Modal
         isOpen={modalIsOpen}
         onRequestClose={() => setModalIsOpen(false)}

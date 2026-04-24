@@ -3,6 +3,7 @@ import UserController from '../../controllers/UserController/UserController.js';
 import DashboardController from '../../controllers/UserController/DashboardController.js';
 import CollectWasteController from '../../controllers/UserController/CollectWasteController.js';
 import ReportWasteController from '../../controllers/UserController/ReportWasteController.js';
+import WasteTimelineController from '../../controllers/UserController/WasteTimelineController.js';
 import verifyToken from '../../middleware/verifyToken.js';
 import upload from '../../middleware/multer.js';
 
@@ -29,5 +30,8 @@ router.put('/report-waste/:id', verifyToken, upload.single('image'), ReportWaste
 router.delete('/report-waste/:id', verifyToken, ReportWasteController.deleteReport);
 router.get('/reports', verifyToken, ReportWasteController.getUserReports);
 router.get('/report-waste/:id', verifyToken, ReportWasteController.getReportById);
+
+// Waste Timeline
+router.get('/waste-timeline', verifyToken, WasteTimelineController.getTimeline);
 
 export default router;

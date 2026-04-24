@@ -11,7 +11,7 @@ import { motion } from "framer-motion";
 import DatePicker from "react-datepicker";
 import Modal from "react-modal";
 import { FaCheckCircle, FaTimesCircle } from "react-icons/fa";
-import debounce from "lodash.debounce";
+import { useNavigate, useLocation } from "react-router-dom";
 import "react-datepicker/dist/react-datepicker.css";
 import api from "../../../services/api";
 
@@ -48,7 +48,13 @@ const categoryData = {
 const units = ["kg", "g", "lb", "oz", "tons", "pieces", "liters", "m³"];
 
 const CollectWaste = () => {
-  const [editId, setEditId] = useState(null);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const editId = queryParams.get("editId");
+
+  const [loadingData, setLoadingData] = useState(!!editId);
+  const [editIdState, setEditIdState] = useState(null);
   const [wasteName, setWasteName] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [subCategory, setSubCategory] = useState("");
@@ -66,22 +72,38 @@ const CollectWaste = () => {
   const fileInputRef = useRef(null);
   const datePickerRef = useRef(null);
 
-  // Load edit data if exists
+  // Fetch data if edit mode
   useEffect(() => {
-    const editItem = JSON.parse(localStorage.getItem("editCollectedWaste"));
-    if (editItem) {
-      setWasteName(editItem.wasteName);
-      setSelectedCategory(editItem.selectedCategory);
-      setSubCategory(editItem.subCategory);
-      setQuantity(editItem.quantity);
-      setSelectedUnit(editItem.selectedUnit);
-      setSelectedDate(new Date(editItem.dateCollected));
-      setDescription(editItem.description);
-      setImagePreview(editItem.imageUrl);
-      setEditId(editItem.id);
-      localStorage.removeItem("editCollectedWaste");
+    if (editId) {
+      const fetchCollectData = async () => {
+        try {
+          const response = await api.get(`/collect-waste/${editId}`);
+          if (response.data.success) {
+            const data = response.data.data;
+            setEditIdState(data.id);
+            setWasteName(data.wastename);
+            setSelectedCategory(data.category);
+            setSubCategory(data.subcategory);
+            setQuantity(data.quantity.toString());
+            setSelectedUnit(data.unit);
+            setSelectedDate(new Date(data.datecollected));
+            setDescription(data.description);
+            setImagePreview(data.photourl);
+          } else {
+            toast.error("Failed to load collection data");
+            navigate("/waste-timeline");
+          }
+        } catch (error) {
+          console.error("Error fetching collect data:", error);
+          toast.error("Error loading data for editing");
+          navigate("/waste-timeline");
+        } finally {
+          setLoadingData(false);
+        }
+      };
+      fetchCollectData();
     }
-  }, []);
+  }, [editId, navigate]);
 
   const handleImageClick = () => fileInputRef.current?.click();
   const handleImageChange = (e) => {
@@ -111,7 +133,7 @@ const CollectWaste = () => {
       setTimeout(() => setModalIsOpen(false), 3000);
       return;
     }
-    if (!editId && !imageFile) {
+    if (!editIdState && !imageFile) {
       setModalStatus("error");
       setModalMessage("Please select an image.");
       setModalIsOpen(true);
@@ -132,8 +154,8 @@ const CollectWaste = () => {
     setIsUploading(true);
     try {
       let response;
-      if (editId) {
-        response = await api.put(`/collect-waste/${editId}`, formData, {
+      if (editIdState) {
+        response = await api.put(`/collect-waste/${editIdState}`, formData, {
           headers: { "Content-Type": "multipart/form-data" },
         });
       } else {
@@ -144,7 +166,7 @@ const CollectWaste = () => {
       if (response.data.success) {
         setModalStatus("success");
         setModalMessage(
-          editId ? "Collection updated successfully!" : "Waste collected successfully!"
+          editIdState ? "Collection updated successfully!" : "Waste collected successfully!"
         );
         setModalIsOpen(true);
         // Reset form
@@ -157,11 +179,10 @@ const CollectWaste = () => {
         setDescription("");
         setImageFile(null);
         setImagePreview(null);
-        setEditId(null);
+        setEditIdState(null);
         setTimeout(() => {
           setModalIsOpen(false);
-          // Redirect to waste-timeline as requested
-          window.location.href = "/waste-timeline";
+          navigate("/waste-timeline");
         }, 2000);
       } else {
         throw new Error(response.data.message || "Submission failed");
@@ -178,6 +199,14 @@ const CollectWaste = () => {
       setIsUploading(false);
     }
   };
+
+  if (loadingData) {
+    return (
+      <div className="min-h-screen flex justify-center items-center bg-gradient-to-br from-emerald-50 via-teal-50 to-green-100">
+        <div className="animate-spin rounded-full h-14 w-14 border-t-4 border-b-4 border-green-600"></div>
+      </div>
+    );
+  }
 
   const inputStyle =
     "w-full border border-gray-300 rounded-xl px-4 py-3 text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 bg-white/80 backdrop-blur-sm";
@@ -267,64 +296,27 @@ const CollectWaste = () => {
           }}
         >
           <motion.div variants={{ hidden: { x: -20 }, visible: { x: 0 } }}>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Waste Name
-            </label>
-            <input
-              type="text"
-              value={wasteName}
-              onChange={(e) => setWasteName(e.target.value)}
-              placeholder="e.g., Plastic Bottles"
-              className={inputStyle}
-              required
-            />
+            <label className="block text-sm font-medium text-gray-700 mb-1">Waste Name</label>
+            <input type="text" value={wasteName} onChange={(e) => setWasteName(e.target.value)} placeholder="e.g., Plastic Bottles" className={inputStyle} required />
           </motion.div>
 
           <motion.div variants={{ hidden: { x: -20 }, visible: { x: 0 } }}>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Category Type
-            </label>
-            {renderDropdown(
-              Object.keys(categoryData),
-              selectedCategory,
-              setSelectedCategory,
-              "Select Category"
-            )}
+            <label className="block text-sm font-medium text-gray-700 mb-1">Category Type</label>
+            {renderDropdown(Object.keys(categoryData), selectedCategory, setSelectedCategory, "Select Category")}
           </motion.div>
 
           {selectedCategory && (
-            <motion.div
-              variants={{ hidden: { x: -20 }, visible: { x: 0 } }}
-              initial="hidden"
-              animate="visible"
-            >
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Sub Category
-              </label>
-              {renderDropdown(
-                categoryData[selectedCategory],
-                subCategory,
-                setSubCategory,
-                "Select Sub-Category"
-              )}
+            <motion.div variants={{ hidden: { x: -20 }, visible: { x: 0 } }} initial="hidden" animate="visible">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Sub Category</label>
+              {renderDropdown(categoryData[selectedCategory], subCategory, setSubCategory, "Select Sub-Category")}
             </motion.div>
           )}
 
           <motion.div variants={{ hidden: { x: -20 }, visible: { x: 0 } }}>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Quantity & Unit
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Quantity & Unit</label>
             <div className="flex flex-col sm:flex-row gap-3">
               <div className="flex-1">
-                <input
-                  type="number"
-                  step="any"
-                  value={quantity}
-                  onChange={(e) => setQuantity(e.target.value)}
-                  placeholder="Amount"
-                  className={inputStyle}
-                  required
-                />
+                <input type="number" step="any" value={quantity} onChange={(e) => setQuantity(e.target.value)} placeholder="Amount" className={inputStyle} required />
               </div>
               <div className="w-full sm:w-48">
                 {renderDropdown(units, selectedUnit, setSelectedUnit, "Unit")}
@@ -333,9 +325,7 @@ const CollectWaste = () => {
           </motion.div>
 
           <motion.div variants={{ hidden: { x: -20 }, visible: { x: 0 } }}>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Date Collected
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Date Collected</label>
             <div className="relative w-full">
               <DatePicker
                 ref={datePickerRef}
@@ -354,33 +344,18 @@ const CollectWaste = () => {
           </motion.div>
 
           <motion.div variants={{ hidden: { x: -20 }, visible: { x: 0 } }}>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Description
-            </label>
-            <textarea
-              placeholder="Additional details (e.g., condition, source, etc.)"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows="3"
-              className={inputStyle}
-              required
-            />
+            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+            <textarea placeholder="Additional details (e.g., condition, source, etc.)" value={description} onChange={(e) => setDescription(e.target.value)} rows="3" className={inputStyle} required />
           </motion.div>
 
           <motion.div variants={{ hidden: { x: -20 }, visible: { x: 0 } }}>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Photo
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Photo</label>
             <div
               className="w-full h-48 flex items-center justify-center border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:border-green-500 transition-colors bg-gray-50/50"
               onClick={handleImageClick}
             >
               {imagePreview ? (
-                <img
-                  src={imagePreview}
-                  alt="Preview"
-                  className="w-full h-full object-cover rounded-xl"
-                />
+                <img src={imagePreview} alt="Preview" className="w-full h-full object-cover rounded-xl" />
               ) : (
                 <div className="text-center">
                   <ImageIcon className="w-12 h-12 text-green-600 mx-auto mb-2" />
@@ -388,35 +363,18 @@ const CollectWaste = () => {
                 </div>
               )}
             </div>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleImageChange}
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              {editId
-                ? "Leave empty to keep current image"
-                : "Image required (max 5MB)"}
-            </p>
+            <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
+            <p className="text-xs text-gray-500 mt-1">{editIdState ? "Leave empty to keep current image" : "Image required (max 5MB)"}</p>
           </motion.div>
 
-          <motion.div
-            variants={{ hidden: { y: 20 }, visible: { y: 0 } }}
-            className="text-center pt-2"
-          >
-            <button
-              type="submit"
-              disabled={isUploading}
-              className="inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold rounded-xl shadow-md hover:from-green-700 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed w-full sm:w-auto"
-            >
+          <motion.div variants={{ hidden: { y: 20 }, visible: { y: 0 } }} className="text-center pt-2">
+            <button type="submit" disabled={isUploading} className="inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold rounded-xl shadow-md hover:from-green-700 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed w-full sm:w-auto">
               {isUploading ? (
                 <>
                   <Loader2 className="animate-spin -ml-1 mr-2 h-5 w-5" />
                   Submitting...
                 </>
-              ) : editId ? (
+              ) : editIdState ? (
                 "Update Collect"
               ) : (
                 "Collect Waste"
@@ -441,17 +399,10 @@ const CollectWaste = () => {
               <FaTimesCircle className="text-red-500 mx-auto" />
             )}
           </div>
-          <h2
-            className={`text-2xl font-semibold ${
-              modalStatus === "success" ? "text-green-600" : "text-red-600"
-            }`}
-          >
+          <h2 className={`text-2xl font-semibold ${modalStatus === "success" ? "text-green-600" : "text-red-600"}`}>
             {modalMessage}
           </h2>
-          <button
-            onClick={() => setModalIsOpen(false)}
-            className="mt-6 px-5 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-          >
+          <button onClick={() => setModalIsOpen(false)} className="mt-6 px-5 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
             Close
           </button>
         </div>
