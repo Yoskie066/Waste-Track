@@ -1,8 +1,9 @@
 import { Router } from 'express';
 import AdminController from '../../controllers/AdminController/AdminController.js';
+import AnalyticsController from '../../controllers/AdminController/AnalyticsController.js';
+import UserManagementController from '../../controllers/AdminController/UserManagementController.js'; 
 import AdminCollectWasteController from '../../controllers/AdminController/AdminCollectWasteController.js';
 import AdminReportWasteController from '../../controllers/AdminController/AdminReportWasteController.js';
-import UserManagementController from '../../controllers/AdminController/UserManagementController.js'; 
 import verifyAdminToken from '../../middleware/verifyAdminToken.js';
 
 const router = Router();
@@ -13,6 +14,18 @@ router.post('/login', AdminController.login);
 router.post('/forgot-password', AdminController.forgotPassword);
 router.post('/refresh-token', AdminController.refreshToken);
 router.post('/logout', verifyAdminToken, AdminController.logout);
+
+// Analytics
+router.get('/analytics/overview', verifyAdminToken, AnalyticsController.getDashboardOverview);
+router.get('/analytics/users', verifyAdminToken, AnalyticsController.getUserAdminStats);
+router.get('/analytics/collected', verifyAdminToken, AnalyticsController.getCollectedWasteStats);
+router.get('/analytics/reported', verifyAdminToken, AnalyticsController.getReportedWasteStats);
+
+// User Management 
+router.get('/users', verifyAdminToken, UserManagementController.getAllUsers);
+router.delete('/users/:id', verifyAdminToken, UserManagementController.deleteUser);
+router.get('/users/export', verifyAdminToken, UserManagementController.exportUsers);
+router.get('/users/years', verifyAdminToken, UserManagementController.getYears);
 
 // Collected Waste
 router.get('/collect-waste', verifyAdminToken, AdminCollectWasteController.getAllCollectWastes);
@@ -29,10 +42,5 @@ router.get('/report-waste/colors', verifyAdminToken, AdminReportWasteController.
 router.get('/report-waste/locations', verifyAdminToken, AdminReportWasteController.getLocations);
 router.get('/report-waste/years', verifyAdminToken, AdminReportWasteController.getYears);
 
-// User Management 
-router.get('/users', verifyAdminToken, UserManagementController.getAllUsers);
-router.delete('/users/:id', verifyAdminToken, UserManagementController.deleteUser);
-router.get('/users/export', verifyAdminToken, UserManagementController.exportUsers);
-router.get('/users/years', verifyAdminToken, UserManagementController.getYears);
 
 export default router;
