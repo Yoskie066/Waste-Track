@@ -12,13 +12,14 @@ class AdminReportWasteController {
       const subCategory = req.query.subCategory || '';
       const color = req.query.color || '';
       const location = req.query.location || '';
+      const month = req.query.month || '';
+      const year = req.query.year || '';
       const sortBy = req.query.sortBy || 'datereported';
       const sortOrder = req.query.sortOrder || 'DESC';
 
-      // dateFrom/dateTo removed – frontend no longer sends them
       const result = await AdminReportWasteModel.getAllReports({
         page, limit, search, wasteName, category, subCategory,
-        color, location, dateFrom: '', dateTo: '', sortBy, sortOrder
+        color, location, dateFrom: '', dateTo: '', month, year, sortBy, sortOrder
       });
 
       res.json({
@@ -52,10 +53,10 @@ class AdminReportWasteController {
 
   static async exportReports(req, res) {
     try {
-      const { search, wasteName, category, subCategory, color, location, sortBy, sortOrder } = req.query;
+      const { search, wasteName, category, subCategory, color, location, month, year, sortBy, sortOrder } = req.query;
       const result = await AdminReportWasteModel.getAllReports({
         page: 1, limit: 100000, search, wasteName, category, subCategory,
-        color, location, dateFrom: '', dateTo: '', sortBy, sortOrder
+        color, location, dateFrom: '', dateTo: '', month, year, sortBy, sortOrder
       });
 
       const data = result.data.map(item => ({
@@ -101,6 +102,16 @@ class AdminReportWasteController {
     } catch (error) {
       console.error('Error in getLocations:', error);
       res.status(500).json({ success: false, message: 'Failed to fetch locations', error: error.message });
+    }
+  }
+
+  static async getYears(req, res) {
+    try {
+      const years = await AdminReportWasteModel.getDistinctYears();
+      res.json({ success: true, data: years });
+    } catch (error) {
+      console.error('Error in getYears:', error);
+      res.status(500).json({ success: false, message: 'Failed to fetch years', error: error.message });
     }
   }
 }

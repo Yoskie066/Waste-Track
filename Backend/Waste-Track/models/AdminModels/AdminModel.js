@@ -1,4 +1,3 @@
-// backend/models/AdminModels/AdminModel.js
 import pool from '../../config/db.js';
 import bcrypt from 'bcryptjs';
 

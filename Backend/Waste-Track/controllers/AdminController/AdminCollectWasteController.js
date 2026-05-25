@@ -13,12 +13,14 @@ class AdminCollectWasteController {
       const unit = req.query.unit || '';
       const dateFrom = req.query.dateFrom || '';
       const dateTo = req.query.dateTo || '';
+      const month = req.query.month || '';
+      const year = req.query.year || '';
       const sortBy = req.query.sortBy || 'datecollected';
       const sortOrder = req.query.sortOrder || 'DESC';
 
       const result = await AdminCollectWasteModel.getAllCollectWastes({
         page, limit, search, wasteName, category, subCategory,
-        unit, dateFrom, dateTo, sortBy, sortOrder
+        unit, dateFrom, dateTo, month, year, sortBy, sortOrder
       });
 
       res.json({
@@ -52,10 +54,10 @@ class AdminCollectWasteController {
 
   static async exportCollectWastes(req, res) {
     try {
-      const { search, wasteName, category, subCategory, unit, dateFrom, dateTo, sortBy, sortOrder } = req.query;
+      const { search, wasteName, category, subCategory, unit, dateFrom, dateTo, month, year, sortBy, sortOrder } = req.query;
       const result = await AdminCollectWasteModel.getAllCollectWastes({
         page: 1, limit: 100000, search, wasteName, category, subCategory,
-        unit, dateFrom, dateTo, sortBy, sortOrder
+        unit, dateFrom, dateTo, month, year, sortBy, sortOrder
       });
 
       const data = result.data.map(item => ({
@@ -91,6 +93,16 @@ class AdminCollectWasteController {
     } catch (error) {
       console.error('Error in getUnits:', error);
       res.status(500).json({ success: false, message: 'Failed to fetch units', error: error.message });
+    }
+  }
+
+  static async getYears(req, res) {
+    try {
+      const years = await AdminCollectWasteModel.getDistinctYears();
+      res.json({ success: true, data: years });
+    } catch (error) {
+      console.error('Error in getYears:', error);
+      res.status(500).json({ success: false, message: 'Failed to fetch years', error: error.message });
     }
   }
 }

@@ -1,7 +1,5 @@
-// frontend/src/components/AdminHeader.jsx
 import { useState } from "react";
-import { Link } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Menu,
   X,
@@ -11,9 +9,11 @@ import {
   FileText,
   LogOut,
 } from "lucide-react";
+import adminApi from "../../../services/adminApi";
 
 export default function AdminHeader() {
   const [isOpen, setIsOpen] = useState(false);
+  const navigate = useNavigate();
 
   const adminDataRaw = localStorage.getItem("ecoTrackCurrentAdmin");
   const adminData = adminDataRaw ? JSON.parse(adminDataRaw) : null;
@@ -21,13 +21,20 @@ export default function AdminHeader() {
   const adminAvatar = adminData?.avatar_url || null;
   const adminInitial = adminEmail.charAt(0).toUpperCase();
 
-  const navigate = useNavigate();
-
-  const handleLogout = () => {
-    localStorage.removeItem("ecoTrackCurrentAdmin");
-    localStorage.removeItem("adminAccessToken");
-    localStorage.removeItem("adminRefreshToken");
-    navigate("/admin-login");
+  const handleLogout = async () => {
+    try {
+      const refreshToken = localStorage.getItem("adminRefreshToken");
+      if (refreshToken) {
+        await adminApi.post("/logout", { refreshToken });
+      }
+    } catch (err) {
+      console.error("Admin logout API error:", err);
+    } finally {
+      localStorage.removeItem("ecoTrackCurrentAdmin");
+      localStorage.removeItem("adminAccessToken");
+      localStorage.removeItem("adminRefreshToken");
+      navigate("/admin-login");
+    }
   };
 
   const navLinks = [

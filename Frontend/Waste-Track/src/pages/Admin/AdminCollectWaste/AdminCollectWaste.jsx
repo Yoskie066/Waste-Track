@@ -22,6 +22,22 @@ const categoryData = {
   ],
 };
 
+const months = [
+  { value: "all", label: "All Months" },
+  { value: "1", label: "January" },
+  { value: "2", label: "February" },
+  { value: "3", label: "March" },
+  { value: "4", label: "April" },
+  { value: "5", label: "May" },
+  { value: "6", label: "June" },
+  { value: "7", label: "July" },
+  { value: "8", label: "August" },
+  { value: "9", label: "September" },
+  { value: "10", label: "October" },
+  { value: "11", label: "November" },
+  { value: "12", label: "December" },
+];
+
 export default function AdminCollect() {
   const navigate = useNavigate();
   const [records, setRecords] = useState([]);
@@ -41,10 +57,14 @@ export default function AdminCollect() {
   const [selectedCategory, setSelectedCategory] = useState("");
   const [subCategory, setSubCategory] = useState("");
   const [selectedUnit, setSelectedUnit] = useState("all");
+  const [selectedMonth, setSelectedMonth] = useState("all");
+  const [selectedYear, setSelectedYear] = useState("all");
   const [sortOrder, setSortOrder] = useState("DESC");
 
   const [unitOptions, setUnitOptions] = useState([]);
+  const [yearOptions, setYearOptions] = useState(["all"]);
   const [loadingUnits, setLoadingUnits] = useState(false);
+  const [loadingYears, setLoadingYears] = useState(false);
 
   useEffect(() => {
     const fetchUnits = async () => {
@@ -66,6 +86,26 @@ export default function AdminCollect() {
     fetchUnits();
   }, []);
 
+  useEffect(() => {
+    const fetchYears = async () => {
+      setLoadingYears(true);
+      try {
+        const response = await adminApi.get("/collect-waste/years");
+        if (response.data.success) {
+          setYearOptions(["all", ...response.data.data]);
+        } else {
+          setYearOptions(["all"]);
+        }
+      } catch (error) {
+        console.error("Failed to fetch years:", error);
+        setYearOptions(["all"]);
+      } finally {
+        setLoadingYears(false);
+      }
+    };
+    fetchYears();
+  }, []);
+
   const fetchRecords = async () => {
     setLoading(true);
     try {
@@ -75,6 +115,8 @@ export default function AdminCollect() {
         category: selectedCategory,
         subCategory,
         unit: selectedUnit === "all" ? "" : selectedUnit,
+        month: selectedMonth,
+        year: selectedYear,
         sortBy: "datecollected",
         sortOrder,
       };
@@ -95,7 +137,7 @@ export default function AdminCollect() {
 
   useEffect(() => {
     fetchRecords();
-  }, [currentPage, selectedCategory, subCategory, selectedUnit, sortOrder]);
+  }, [currentPage, selectedCategory, subCategory, selectedUnit, selectedMonth, selectedYear, sortOrder]);
 
   const showFeedback = (type, message) => {
     setFeedbackType(type);
@@ -127,6 +169,8 @@ export default function AdminCollect() {
         category: selectedCategory,
         subCategory,
         unit: selectedUnit === "all" ? "" : selectedUnit,
+        month: selectedMonth,
+        year: selectedYear,
         sortBy: "datecollected",
         sortOrder,
       };
@@ -152,6 +196,8 @@ export default function AdminCollect() {
     setSelectedCategory("");
     setSubCategory("");
     setSelectedUnit("all");
+    setSelectedMonth("all");
+    setSelectedYear("all");
     setSortOrder("DESC");
     setCurrentPage(1);
   };
@@ -161,27 +207,35 @@ export default function AdminCollect() {
   const inputStyle = "w-full border border-gray-300 rounded-xl px-4 py-2 text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-500 bg-white/80";
   const dropdownStyle = "relative w-full cursor-pointer rounded-xl border border-gray-300 bg-white/80 py-2 pl-4 pr-10 text-left text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-500";
 
-  const renderDropdown = (options, selected, setSelected, placeholder) => (
+  const renderDropdown = (options, selected, setSelected, placeholder, displayMapper = null) => (
     <Listbox value={selected} onChange={setSelected}>
       <div className="relative">
         <Listbox.Button className={dropdownStyle}>
-          <span className="block truncate">{selected !== "all" && selected ? selected : <span className="text-gray-400">{placeholder}</span>}</span>
+          <span className="block truncate">
+            {selected !== "all" && selected 
+              ? (displayMapper ? displayMapper(selected) : selected) 
+              : <span className="text-gray-400">{placeholder}</span>}
+          </span>
           <span className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
             <ChevronDown className="h-5 w-5 text-gray-500" />
           </span>
         </Listbox.Button>
         <Transition as={Fragment} leave="transition ease-in duration-100" leaveFrom="opacity-100" leaveTo="opacity-0">
           <Listbox.Options className="absolute z-20 mt-2 max-h-60 w-full overflow-auto rounded-xl bg-white py-2 text-base shadow-lg ring-1 ring-black/5 focus:outline-none">
-            {options.map((item, idx) => (
-              <Listbox.Option key={idx} value={item} className={({ active }) => `relative cursor-default select-none py-2 pl-10 pr-4 ${active ? "bg-green-100 text-green-900" : "text-gray-900"}`}>
-                {({ selected }) => (
-                  <>
-                    <span className={`block truncate ${selected ? "font-medium" : "font-normal"}`}>{item === "all" ? "All" : item}</span>
-                    {selected && <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-green-600"><Check className="h-5 w-5" /></span>}
-                  </>
-                )}
-              </Listbox.Option>
-            ))}
+            {options.map((item, idx) => {
+              const displayValue = typeof item === 'object' ? item.label : (displayMapper ? displayMapper(item) : item);
+              const actualValue = typeof item === 'object' ? item.value : item;
+              return (
+                <Listbox.Option key={idx} value={actualValue} className={({ active }) => `relative cursor-default select-none py-2 pl-10 pr-4 ${active ? "bg-green-100 text-green-900" : "text-gray-900"}`}>
+                  {({ selected }) => (
+                    <>
+                      <span className={`block truncate ${selected ? "font-medium" : "font-normal"}`}>{displayValue}</span>
+                      {selected && <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-green-600"><Check className="h-5 w-5" /></span>}
+                    </>
+                  )}
+                </Listbox.Option>
+              );
+            })}
           </Listbox.Options>
         </Transition>
       </div>
@@ -236,6 +290,21 @@ export default function AdminCollect() {
                 <div className={inputStyle + " text-gray-400"}>Loading units...</div>
               ) : (
                 renderDropdown(unitOptions, selectedUnit, setSelectedUnit, "Select Unit")
+              )}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Month</label>
+              {renderDropdown(months, selectedMonth, setSelectedMonth, "Select Month", (val) => {
+                const month = months.find(m => m.value === val);
+                return month ? month.label : val;
+              })}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Year</label>
+              {loadingYears ? (
+                <div className={inputStyle + " text-gray-400"}>Loading years...</div>
+              ) : (
+                renderDropdown(yearOptions, selectedYear, setSelectedYear, "Select Year")
               )}
             </div>
             <div>
@@ -403,7 +472,7 @@ export default function AdminCollect() {
           </div>
         </div>
 
-        {/* Preview Modal - FIXED SCROLLING & SMALLER IMAGE */}
+        {/* Preview Modal */}
         <Modal
           isOpen={previewModalOpen}
           onRequestClose={() => setPreviewModalOpen(false)}

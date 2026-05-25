@@ -1,4 +1,3 @@
-// backend/controllers/AdminController/AdminController.js
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import pool from '../../config/db.js';
@@ -170,6 +169,22 @@ class AdminController {
     } catch (err) {
       console.error('Admin Google callback error:', err);
       res.redirect(`${process.env.FRONTEND_URL}/admin-login?error=google_auth_failed`);
+    }
+  }
+
+  static async logout(req, res) {
+    try {
+      const adminId = req.admin.id; 
+      if (!adminId) {
+        return res.status(400).json({ error: 'Admin not identified' });
+      }
+      const client = await pool.connect();
+      await client.query('DELETE FROM admin_refresh_tokens WHERE admin_id = $1', [adminId]);
+      client.release();
+      res.status(200).json({ message: 'Admin logged out successfully' });
+    } catch (err) {
+      console.error('Admin logout error:', err);
+      res.status(500).json({ error: 'Server error during logout' });
     }
   }
 }

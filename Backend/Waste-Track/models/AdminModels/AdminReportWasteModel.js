@@ -3,7 +3,7 @@ import pool from '../../config/db.js';
 class AdminReportWasteModel {
   static async getAllReports({
     page, limit, search, wasteName, category, subCategory,
-    color, location, dateFrom, dateTo,
+    color, location, dateFrom, dateTo, month, year,
     sortBy = 'datereported', sortOrder = 'DESC'
   }) {
     const offset = (page - 1) * limit;
@@ -43,6 +43,14 @@ class AdminReportWasteModel {
     if (dateTo) {
       conditions.push(`datereported <= $${values.length + 1}`);
       values.push(dateTo);
+    }
+    if (month && month !== 'all') {
+      conditions.push(`EXTRACT(MONTH FROM datereported) = $${values.length + 1}`);
+      values.push(parseInt(month));
+    }
+    if (year && year !== 'all') {
+      conditions.push(`EXTRACT(YEAR FROM datereported) = $${values.length + 1}`);
+      values.push(parseInt(year));
     }
 
     if (conditions.length) {
@@ -103,6 +111,22 @@ class AdminReportWasteModel {
       return result.rows.map(row => row.location);
     } catch (error) {
       console.error('SQL ERROR in getDistinctLocations:', error.message);
+      throw error;
+    }
+  }
+
+  static async getDistinctYears() {
+    const query = `
+      SELECT DISTINCT EXTRACT(YEAR FROM datereported) as year 
+      FROM report_waste 
+      WHERE datereported IS NOT NULL 
+      ORDER BY year DESC
+    `;
+    try {
+      const result = await pool.query(query);
+      return result.rows.map(row => row.year.toString());
+    } catch (error) {
+      console.error('SQL ERROR in getDistinctYears:', error.message);
       throw error;
     }
   }

@@ -1,7 +1,5 @@
-// frontend/src/components/UserHeader.jsx
 import { useState } from "react";
-import { Link } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Menu,
   X,
@@ -11,23 +9,33 @@ import {
   History,
   LogOut,
 } from "lucide-react";
+import api from '../../../services/api';
 
 export default function UserHeader() {
   const [isOpen, setIsOpen] = useState(false);
-  
+  const navigate = useNavigate();
+
   const userDataRaw = localStorage.getItem("ecoTrackCurrentUser");
   const userData = userDataRaw ? JSON.parse(userDataRaw) : null;
   const userEmail = userData?.email || "Guest";
   const userAvatar = userData?.avatar_url || null;
   const userInitial = userEmail.charAt(0).toUpperCase();
 
-  const navigate = useNavigate();
-
-  const handleLogout = () => {
-    localStorage.removeItem("ecoTrackCurrentUser");
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
-    navigate("/login");
+  const handleLogout = async () => {
+    try {
+      const refreshToken = localStorage.getItem("refreshToken");
+      if (refreshToken) {
+        await api.post("/logout", { refreshToken });
+      }
+    } catch (err) {
+      console.error("Logout API error:", err);
+    } finally {
+      // Always clear local storage and redirect, even if API fails
+      localStorage.removeItem("ecoTrackCurrentUser");
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
+      navigate("/login");
+    }
   };
 
   const navLinks = [

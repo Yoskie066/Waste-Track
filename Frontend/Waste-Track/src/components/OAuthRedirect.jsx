@@ -1,4 +1,3 @@
-// frontend/src/pages/OAuthRedirect.jsx
 import { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 

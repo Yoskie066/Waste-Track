@@ -3,7 +3,7 @@ import pool from '../../config/db.js';
 class AdminCollectWasteModel {
   static async getAllCollectWastes({
     page, limit, search, wasteName, category, subCategory,
-    unit, dateFrom, dateTo,
+    unit, dateFrom, dateTo, month, year,
     sortBy = 'datecollected', sortOrder = 'DESC'
   }) {
     const offset = (page - 1) * limit;
@@ -39,6 +39,14 @@ class AdminCollectWasteModel {
     if (dateTo) {
       conditions.push(`datecollected <= $${values.length + 1}`);
       values.push(dateTo);
+    }
+    if (month && month !== 'all') {
+      conditions.push(`EXTRACT(MONTH FROM datecollected) = $${values.length + 1}`);
+      values.push(parseInt(month));
+    }
+    if (year && year !== 'all') {
+      conditions.push(`EXTRACT(YEAR FROM datecollected) = $${values.length + 1}`);
+      values.push(parseInt(year));
     }
 
     if (conditions.length) {
@@ -88,6 +96,22 @@ class AdminCollectWasteModel {
       return result.rows.map(row => row.unit);
     } catch (error) {
       console.error('SQL ERROR in getDistinctUnits:', error.message);
+      throw error;
+    }
+  }
+
+  static async getDistinctYears() {
+    const query = `
+      SELECT DISTINCT EXTRACT(YEAR FROM datecollected) as year 
+      FROM collect_waste 
+      WHERE datecollected IS NOT NULL 
+      ORDER BY year DESC
+    `;
+    try {
+      const result = await pool.query(query);
+      return result.rows.map(row => row.year.toString());
+    } catch (error) {
+      console.error('SQL ERROR in getDistinctYears:', error.message);
       throw error;
     }
   }

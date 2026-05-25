@@ -1,4 +1,3 @@
-// backend/config/passport.js
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import bcrypt from 'bcryptjs';

@@ -13,6 +13,7 @@ router.post('/register', UserController.register);
 router.post('/login', UserController.login);
 router.post('/forgot-password', UserController.forgotPassword);
 router.post('/refresh-token', UserController.refreshToken);
+router.post('/logout', verifyToken, UserController.logout);
 
 // Dashboard
 router.get('/dashboard', verifyToken, DashboardController.getDashboardData);

@@ -1,4 +1,3 @@
-// backend/controllers/UserController/UserController.js
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import pool from '../../config/db.js';
@@ -170,6 +169,22 @@ class UserController {
     } catch (err) {
       console.error('User Google callback error:', err);
       res.redirect(`${process.env.FRONTEND_URL}/login?error=google_auth_failed`);
+    }
+  }
+
+  static async logout(req, res) {
+    try {
+      const userId = req.user.id; 
+      if (!userId) {
+        return res.status(400).json({ error: 'User not identified' });
+      }
+      const client = await pool.connect();
+      await client.query('DELETE FROM refresh_tokens WHERE user_id = $1', [userId]);
+      client.release();
+      res.status(200).json({ message: 'Logged out successfully' });
+    } catch (err) {
+      console.error('Logout error:', err);
+      res.status(500).json({ error: 'Server error during logout' });
     }
   }
 }
