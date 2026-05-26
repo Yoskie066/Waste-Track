@@ -3,9 +3,6 @@ import { motion } from "framer-motion";
 import {
   BarChart,
   Bar,
-  PieChart,
-  Pie,
-  Cell,
   LineChart,
   Line,
   XAxis,
@@ -17,7 +14,7 @@ import {
   AreaChart,
   Area
 } from "recharts";
-import { Users, UserCheck, UserX, Shield, ShieldCheck, ShieldOff, Package, AlertTriangle, Loader2, TrendingUp, Calendar, PieChart as PieIcon } from "lucide-react";
+import { Users, UserCheck, UserX, Shield, ShieldCheck, ShieldOff, Package, AlertTriangle, Loader2, TrendingUp, Calendar } from "lucide-react";
 import adminApi from "../../../services/adminApi";
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658', '#d0ed57'];
@@ -64,7 +61,6 @@ export default function Analytics() {
   const offlineUsers = totalUsers - onlineUsers;
   const offlineAdmins = totalAdmins - onlineAdmins;
 
-  // Prepare monthly chart data
   const monthlyCollectedData = collected.byMonth || [];
   const monthlyReportedData = reported.byMonth || [];
 
@@ -78,131 +74,61 @@ export default function Analytics() {
           className="bg-white/70 backdrop-blur-lg rounded-2xl shadow-xl p-6 mb-8"
         >
           <h1 className="text-3xl md:text-4xl font-bold text-green-700 mb-2">Analytics Dashboard</h1>
-          <p className="text-gray-600">Comprehensive overview of system data – users, waste collection, and reports</p>
+          <p className="text-gray-600">complete overview of all features through graph-based data visualization</p>
         </motion.div>
 
-        {/* User & Admin Stats Cards - 6 cards (2 rows on desktop) */}
+        {/* User & Admin Stats Cards (6 cards) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          {/* Total Users */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.1 }}
-            className="bg-white/70 backdrop-blur-lg rounded-2xl shadow-md p-6 flex items-center gap-4"
-          >
-            <div className="p-3 bg-blue-100 rounded-full">
-              <Users className="h-8 w-8 text-blue-600" />
-            </div>
-            <div>
-              <p className="text-gray-500 text-sm">Total Users</p>
-              <p className="text-3xl font-bold text-gray-800">{totalUsers}</p>
-            </div>
+          <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}
+            className="bg-white/70 backdrop-blur-lg rounded-2xl shadow-md p-6 flex items-center gap-4">
+            <div className="p-3 bg-blue-100 rounded-full"><Users className="h-8 w-8 text-blue-600" /></div>
+            <div><p className="text-gray-500 text-sm">Total Users</p><p className="text-3xl font-bold text-gray-800">{totalUsers}</p></div>
           </motion.div>
-          {/* Online Users */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.15 }}
-            className="bg-white/70 backdrop-blur-lg rounded-2xl shadow-md p-6 flex items-center gap-4"
-          >
-            <div className="p-3 bg-green-100 rounded-full">
-              <UserCheck className="h-8 w-8 text-green-600" />
-            </div>
-            <div>
-              <p className="text-gray-500 text-sm">Online Users</p>
-              <p className="text-3xl font-bold text-green-600">{onlineUsers}</p>
-            </div>
+          <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.15 }}
+            className="bg-white/70 backdrop-blur-lg rounded-2xl shadow-md p-6 flex items-center gap-4">
+            <div className="p-3 bg-green-100 rounded-full"><UserCheck className="h-8 w-8 text-green-600" /></div>
+            <div><p className="text-gray-500 text-sm">Online Users</p><p className="text-3xl font-bold text-green-600">{onlineUsers}</p></div>
           </motion.div>
-          {/* Offline Users */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2 }}
-            className="bg-white/70 backdrop-blur-lg rounded-2xl shadow-md p-6 flex items-center gap-4"
-          >
-            <div className="p-3 bg-gray-100 rounded-full">
-              <UserX className="h-8 w-8 text-gray-600" />
-            </div>
-            <div>
-              <p className="text-gray-500 text-sm">Offline Users</p>
-              <p className="text-3xl font-bold text-gray-800">{offlineUsers}</p>
-            </div>
+          <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}
+            className="bg-white/70 backdrop-blur-lg rounded-2xl shadow-md p-6 flex items-center gap-4">
+            <div className="p-3 bg-gray-100 rounded-full"><UserX className="h-8 w-8 text-gray-600" /></div>
+            <div><p className="text-gray-500 text-sm">Offline Users</p><p className="text-3xl font-bold text-gray-800">{offlineUsers}</p></div>
           </motion.div>
-          {/* Total Admins */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.25 }}
-            className="bg-white/70 backdrop-blur-lg rounded-2xl shadow-md p-6 flex items-center gap-4"
-          >
-            <div className="p-3 bg-purple-100 rounded-full">
-              <Shield className="h-8 w-8 text-purple-600" />
-            </div>
-            <div>
-              <p className="text-gray-500 text-sm">Total Admins</p>
-              <p className="text-3xl font-bold text-gray-800">{totalAdmins}</p>
-            </div>
+          <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.25 }}
+            className="bg-white/70 backdrop-blur-lg rounded-2xl shadow-md p-6 flex items-center gap-4">
+            <div className="p-3 bg-purple-100 rounded-full"><Shield className="h-8 w-8 text-purple-600" /></div>
+            <div><p className="text-gray-500 text-sm">Total Admins</p><p className="text-3xl font-bold text-gray-800">{totalAdmins}</p></div>
           </motion.div>
-          {/* Online Admins */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.3 }}
-            className="bg-white/70 backdrop-blur-lg rounded-2xl shadow-md p-6 flex items-center gap-4"
-          >
-            <div className="p-3 bg-indigo-100 rounded-full">
-              <ShieldCheck className="h-8 w-8 text-indigo-600" />
-            </div>
-            <div>
-              <p className="text-gray-500 text-sm">Online Admins</p>
-              <p className="text-3xl font-bold text-indigo-600">{onlineAdmins}</p>
-            </div>
+          <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }}
+            className="bg-white/70 backdrop-blur-lg rounded-2xl shadow-md p-6 flex items-center gap-4">
+            <div className="p-3 bg-indigo-100 rounded-full"><ShieldCheck className="h-8 w-8 text-indigo-600" /></div>
+            <div><p className="text-gray-500 text-sm">Online Admins</p><p className="text-3xl font-bold text-indigo-600">{onlineAdmins}</p></div>
           </motion.div>
-          {/* Offline Admins */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.35 }}
-            className="bg-white/70 backdrop-blur-lg rounded-2xl shadow-md p-6 flex items-center gap-4"
-          >
-            <div className="p-3 bg-gray-100 rounded-full">
-              <ShieldOff className="h-8 w-8 text-gray-600" />
-            </div>
-            <div>
-              <p className="text-gray-500 text-sm">Offline Admins</p>
-              <p className="text-3xl font-bold text-gray-800">{offlineAdmins}</p>
-            </div>
+          <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.35 }}
+            className="bg-white/70 backdrop-blur-lg rounded-2xl shadow-md p-6 flex items-center gap-4">
+            <div className="p-3 bg-gray-100 rounded-full"><ShieldOff className="h-8 w-8 text-gray-600" /></div>
+            <div><p className="text-gray-500 text-sm">Offline Admins</p><p className="text-3xl font-bold text-gray-800">{offlineAdmins}</p></div>
           </motion.div>
         </div>
 
         {/* COLLECTED WASTE SECTION */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="bg-white/70 backdrop-blur-lg rounded-2xl shadow-xl p-6 mb-8"
-        >
-          <div className="flex items-center gap-3 mb-6">
-            <Package className="h-7 w-7 text-green-600" />
-            <h2 className="text-2xl font-bold text-gray-800">Collected Waste Analytics</h2>
-          </div>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
+          className="bg-white/70 backdrop-blur-lg rounded-2xl shadow-xl p-6 mb-8">
+          <div className="flex items-center gap-3 mb-6"><Package className="h-7 w-7 text-green-600" /><h2 className="text-2xl font-bold text-gray-800">Collected Waste Analytics</h2></div>
 
-          {/* Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             <div className="bg-white rounded-xl p-4 shadow flex items-center justify-between">
-              <span className="text-gray-600">Total Records</span>
-              <span className="text-2xl font-bold text-blue-600">{collected.total?.records || 0}</span>
+              <span className="text-gray-600">Total Records</span><span className="text-2xl font-bold text-blue-600">{collected.total?.records || 0}</span>
             </div>
             <div className="bg-white rounded-xl p-4 shadow flex items-center justify-between">
-              <span className="text-gray-600">Total Quantity (units)</span>
-              <span className="text-2xl font-bold text-green-600">{collected.total?.quantity?.toFixed(1) || 0}</span>
+              <span className="text-gray-600">Total Quantity (units)</span><span className="text-2xl font-bold text-green-600">{collected.total?.quantity?.toFixed(1) || 0}</span>
             </div>
           </div>
 
-          {/* Top Waste Types */}
+          {/* Top Waste Types (list) */}
           <div className="bg-white rounded-xl p-4 shadow mb-8">
             <h3 className="text-lg font-semibold text-gray-700 mb-4">🏆 Top Collected Waste Types</h3>
-            {collected.topWasteTypes?.length > 0 ? (
+            {collected.topWasteTypes?.length ? (
               <div className="space-y-3">
                 {collected.topWasteTypes.slice(0, 5).map((item, idx) => (
                   <div key={idx} className="flex justify-between items-center border-b border-gray-100 pb-2">
@@ -214,44 +140,32 @@ export default function Analytics() {
             ) : <p className="text-gray-400">No data</p>}
           </div>
 
-          {/* Collected by Category - PIE CHART (explicitly ensured) */}
+          {/* Collected by Category - BAR CHART (replaces pie) */}
           <div className="bg-white rounded-xl p-4 shadow mb-8">
             <h3 className="text-lg font-semibold text-gray-700 mb-4 flex items-center gap-2">
-              <PieIcon className="w-5 h-5 text-green-600" />
-              Collected by Category
+              <BarChart className="w-5 h-5 text-green-600" /> Collected by Category
             </h3>
-            {!collected.byCategory || collected.byCategory.length === 0 ? (
+            {!collected.byCategory?.length ? (
               <p className="text-gray-500 text-center py-8">No collected waste data yet.</p>
             ) : (
-              <ResponsiveContainer width="100%" height={400}>
-                <PieChart>
-                  <Pie
-                    data={collected.byCategory}
-                    dataKey="count"
-                    nameKey="category"
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={140}
-                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                  >
-                    {collected.byCategory.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
+              <ResponsiveContainer width="100%" height={350}>
+                <BarChart data={collected.byCategory} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="category" />
+                  <YAxis />
                   <Tooltip />
-                  <Legend verticalAlign="bottom" height={36} />
-                </PieChart>
+                  <Bar dataKey="count" fill="#8884d8" name="Number of records" />
+                </BarChart>
               </ResponsiveContainer>
             )}
           </div>
 
-          {/* Monthly Trend */}
+          {/* Monthly Collection Trend */}
           <div className="bg-white rounded-xl p-4 shadow">
             <h3 className="text-lg font-semibold text-gray-700 mb-4 flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-green-600" />
-              Monthly Collection Trend (Last 12 months)
+              <TrendingUp className="w-5 h-5 text-green-600" /> Monthly Collection Trend (Last 12 months)
             </h3>
-            {monthlyCollectedData.length === 0 ? (
+            {!monthlyCollectedData.length ? (
               <p className="text-gray-500 text-center py-8">No monthly data available.</p>
             ) : (
               <ResponsiveContainer width="100%" height={350}>
@@ -271,40 +185,27 @@ export default function Analytics() {
         </motion.div>
 
         {/* REPORTED WASTE SECTION */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="bg-white/70 backdrop-blur-lg rounded-2xl shadow-xl p-6 mb-8"
-        >
-          <div className="flex items-center gap-3 mb-6">
-            <AlertTriangle className="h-7 w-7 text-orange-600" />
-            <h2 className="text-2xl font-bold text-gray-800">Reported Waste Analytics</h2>
-          </div>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}
+          className="bg-white/70 backdrop-blur-lg rounded-2xl shadow-xl p-6 mb-8">
+          <div className="flex items-center gap-3 mb-6"><AlertTriangle className="h-7 w-7 text-orange-600" /><h2 className="text-2xl font-bold text-gray-800">Reported Waste Analytics</h2></div>
 
-          {/* Total Reports & Most Reported */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             <div className="bg-white rounded-xl p-4 shadow flex items-center justify-between">
-              <span className="text-gray-600">Total Reports</span>
-              <span className="text-2xl font-bold text-orange-600">{reported.total?.records || 0}</span>
+              <span className="text-gray-600">Total Reports</span><span className="text-2xl font-bold text-orange-600">{reported.total?.records || 0}</span>
             </div>
             <div className="bg-white rounded-xl p-4 shadow flex items-center justify-between">
-              <span className="text-gray-600">Most Reported Waste</span>
-              <span className="font-semibold text-gray-700">
-                {reported.topWasteTypes?.[0]?.wastename || "—"}
-              </span>
+              <span className="text-gray-600">Most Reported Waste</span><span className="font-semibold text-gray-700">{reported.topWasteTypes?.[0]?.wastename || "—"}</span>
             </div>
           </div>
 
           {/* Top Reported Waste Types */}
           <div className="bg-white rounded-xl p-4 shadow mb-8">
             <h3 className="text-lg font-semibold text-gray-700 mb-4">⚠️ Most Reported Waste Types</h3>
-            {reported.topWasteTypes?.length > 0 ? (
+            {reported.topWasteTypes?.length ? (
               <div className="space-y-3">
                 {reported.topWasteTypes.slice(0, 5).map((item, idx) => (
                   <div key={idx} className="flex justify-between items-center border-b border-gray-100 pb-2">
-                    <span className="text-gray-700">{item.wastename}</span>
-                    <span className="font-semibold text-orange-600">{item.count} reports</span>
+                    <span className="text-gray-700">{item.wastename}</span><span className="font-semibold text-orange-600">{item.count} reports</span>
                   </div>
                 ))}
               </div>
@@ -314,10 +215,9 @@ export default function Analytics() {
           {/* Reported by Category - BAR CHART */}
           <div className="bg-white rounded-xl p-4 shadow mb-8">
             <h3 className="text-lg font-semibold text-gray-700 mb-4 flex items-center gap-2">
-              <BarChart className="w-5 h-5 text-orange-600" />
-              Reports by Category
+              <BarChart className="w-5 h-5 text-orange-600" /> Reports by Category
             </h3>
-            {reported.byCategory?.length === 0 ? (
+            {!reported.byCategory?.length ? (
               <p className="text-gray-500 text-center py-8">No report data yet.</p>
             ) : (
               <ResponsiveContainer width="100%" height={350}>
@@ -332,33 +232,22 @@ export default function Analytics() {
             )}
           </div>
 
-          {/* Reported by Color - PIE CHART (ensured to display) */}
+          {/* Reported by Color - BAR CHART (replaces pie) */}
           <div className="bg-white rounded-xl p-4 shadow mb-8">
             <h3 className="text-lg font-semibold text-gray-700 mb-4 flex items-center gap-2">
-              <PieIcon className="w-5 h-5 text-orange-600" />
-              Reports by Color
+              <BarChart className="w-5 h-5 text-orange-600" /> Reports by Color
             </h3>
-            {!reported.byColor || reported.byColor.length === 0 ? (
+            {!reported.byColor?.length ? (
               <p className="text-gray-500 text-center py-8">No color data available.</p>
             ) : (
-              <ResponsiveContainer width="100%" height={400}>
-                <PieChart>
-                  <Pie
-                    data={reported.byColor}
-                    dataKey="count"
-                    nameKey="color"
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={140}
-                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                  >
-                    {reported.byColor.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
+              <ResponsiveContainer width="100%" height={350}>
+                <BarChart data={reported.byColor} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="color" />
+                  <YAxis />
                   <Tooltip />
-                  <Legend verticalAlign="bottom" height={36} />
-                </PieChart>
+                  <Bar dataKey="count" fill="#00C49F" name="Reports" />
+                </BarChart>
               </ResponsiveContainer>
             )}
           </div>
@@ -366,10 +255,9 @@ export default function Analytics() {
           {/* Monthly Report Trend */}
           <div className="bg-white rounded-xl p-4 shadow mb-8">
             <h3 className="text-lg font-semibold text-gray-700 mb-4 flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-orange-600" />
-              Monthly Report Trend (Last 12 months)
+              <Calendar className="w-5 h-5 text-orange-600" /> Monthly Report Trend (Last 12 months)
             </h3>
-            {monthlyReportedData.length === 0 ? (
+            {!monthlyReportedData.length ? (
               <p className="text-gray-500 text-center py-8">No monthly data available.</p>
             ) : (
               <ResponsiveContainer width="100%" height={350}>
@@ -384,16 +272,15 @@ export default function Analytics() {
             )}
           </div>
 
-          {/* Top Locations */}
+          {/* Top Locations - Horizontal Bar Chart */}
           <div className="bg-white rounded-xl p-4 shadow">
             <h3 className="text-lg font-semibold text-gray-700 mb-4 flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-orange-600" />
-              Top Locations by Reports
+              <TrendingUp className="w-5 h-5 text-orange-600" /> Top Locations by Reports
             </h3>
-            {reported.byLocation?.length === 0 ? (
+            {!reported.byLocation?.length ? (
               <p className="text-gray-500 text-center py-8">No location data available.</p>
             ) : (
-              <ResponsiveContainer width="100%" height={350}>
+              <ResponsiveContainer width="100%" height={Math.min(400, reported.byLocation.length * 45)}>
                 <BarChart data={reported.byLocation} layout="vertical" margin={{ top: 20, right: 30, left: 100, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis type="number" />
@@ -405,10 +292,6 @@ export default function Analytics() {
             )}
           </div>
         </motion.div>
-
-        <div className="text-center text-xs text-gray-500 mt-8">
-          Data is fetched in real‑time from the database. Status (online/offline) is based on active refresh tokens.
-        </div>
       </div>
     </div>
   );

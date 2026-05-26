@@ -78,7 +78,7 @@ const AdminLogin = () => {
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.6 }}
       >
-        Admin Portal — EcoTrack
+        Admin Portal — Waste Track
       </motion.h2>
 
       <motion.p
@@ -87,7 +87,7 @@ const AdminLogin = () => {
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.3, duration: 0.6 }}
       >
-        Admins, please log in using your credentials to manage EcoTrack.
+        Admins, please log in using your credentials to manage WasteTrack.
       </motion.p>
 
       <div className="flex flex-col md:flex-row justify-between items-center gap-12">

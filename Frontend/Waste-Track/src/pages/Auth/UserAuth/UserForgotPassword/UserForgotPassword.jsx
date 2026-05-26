@@ -75,7 +75,7 @@ const UserForgotPassword = () => {
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.6 }}
       >
-        Welcome to EcoTrack!
+        Welcome to WasteTrack!
       </motion.h2>
 
       <motion.p

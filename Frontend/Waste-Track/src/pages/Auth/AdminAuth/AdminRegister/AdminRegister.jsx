@@ -83,7 +83,7 @@ const AdminRegister = () => {
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.6 }}
       >
-        Welcome to EcoTrack Admin!
+        Welcome to WasteTrack Admin!
       </motion.h2>
 
       <motion.p
@@ -92,7 +92,7 @@ const AdminRegister = () => {
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.3, duration: 0.6 }}
       >
-        To get started with EcoTrack Admin Panel, kindly complete the registration form below to create your admin account.
+        To get started with WasteTrack Admin Panel, kindly complete the registration form below to create your admin account.
       </motion.p>
 
       <div className="flex flex-col md:flex-row justify-between items-center gap-12">

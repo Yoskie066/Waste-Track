@@ -74,7 +74,7 @@ const AdminForgotPassword = () => {
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.6 }}
       >
-        Welcome to EcoTrack Admin!
+        Welcome to WasteTrack Admin!
       </motion.h2>
 
       <motion.p

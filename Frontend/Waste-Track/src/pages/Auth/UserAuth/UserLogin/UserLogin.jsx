@@ -77,7 +77,7 @@ const UserLogin = () => {
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.6 }}
       >
-        Welcome to EcoTrack!
+        Welcome to WasteTrack!
       </motion.h2>
 
       <motion.p
@@ -86,7 +86,7 @@ const UserLogin = () => {
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.3, duration: 0.6 }}
       >
-        Kindly provide your login details to continue using EcoTrack's services.
+        Kindly provide your login details to continue using WasteTrack's services.
       </motion.p>
 
       <div className="flex flex-col md:flex-row justify-between items-center gap-12">

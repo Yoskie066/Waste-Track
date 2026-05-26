@@ -251,7 +251,7 @@ export default function UserManagement() {
             User Management
           </h1>
           <p className="text-gray-600">
-            Manage all registered users and administrators – status updates every 10 seconds
+            Centralized management of all registered users and administrators
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-3 mt-6">
             <button
