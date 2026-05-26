@@ -3,7 +3,8 @@ import pool from '../config/db.js';
 const initDb = async () => {
   const client = await pool.connect();
   try {
-    // ======================= 1. Users Tables =======================
+    // ======================= 1. USER & ADMIN AUTHENTICATION =======================
+    // Stores regular users (for User Management & Analytics)
     await client.query(`
       CREATE TABLE IF NOT EXISTS "Users-Login" (
         id SERIAL PRIMARY KEY,
@@ -15,21 +16,12 @@ const initDb = async () => {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
-
     await client.query(`
       ALTER TABLE "Users-Login" ADD COLUMN IF NOT EXISTS google_id VARCHAR(255) UNIQUE,
       ADD COLUMN IF NOT EXISTS avatar_url TEXT
     `);
 
-    await client.query(`
-      CREATE TABLE IF NOT EXISTS refresh_tokens (
-        id SERIAL PRIMARY KEY,
-        token TEXT NOT NULL,
-        user_id INTEGER NOT NULL REFERENCES "Users-Login"(id) ON DELETE CASCADE,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-
+    // Stores admin users (for User Management & Analytics)
     await client.query(`
       CREATE TABLE IF NOT EXISTS "Admins-Login" (
         id SERIAL PRIMARY KEY,
@@ -41,12 +33,22 @@ const initDb = async () => {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
-
     await client.query(`
       ALTER TABLE "Admins-Login" ADD COLUMN IF NOT EXISTS google_id VARCHAR(255) UNIQUE,
       ADD COLUMN IF NOT EXISTS avatar_url TEXT
     `);
 
+    // Refresh tokens for users (used to determine online/offline status in User Management & Analytics)
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS refresh_tokens (
+        id SERIAL PRIMARY KEY,
+        token TEXT NOT NULL,
+        user_id INTEGER NOT NULL REFERENCES "Users-Login"(id) ON DELETE CASCADE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Refresh tokens for admins (used for online/offline status)
     await client.query(`
       CREATE TABLE IF NOT EXISTS admin_refresh_tokens (
         id SERIAL PRIMARY KEY,
@@ -56,7 +58,7 @@ const initDb = async () => {
       )
     `);
 
-    // ======================= 2. Dashboard Summary Table =======================
+    // ======================= 2. DASHBOARD SUMMARY (for User Dashboard) =======================
     await client.query(`
       CREATE TABLE IF NOT EXISTS dashboard_summary (
         id SERIAL PRIMARY KEY,
@@ -69,7 +71,7 @@ const initDb = async () => {
       )
     `);
 
-    // ======================= 3. Collect Waste Tables & Triggers =======================
+    // ======================= 3. COLLECTED WASTE (for Collected Waste Management & Analytics) =======================
     await client.query(`
       CREATE TABLE IF NOT EXISTS collect_waste (
         id SERIAL PRIMARY KEY,
@@ -85,6 +87,7 @@ const initDb = async () => {
       )
     `);
 
+    // Timeline table for collected waste (used in User Waste Timeline)
     await client.query(`
       CREATE TABLE IF NOT EXISTS collect_waste_timeline (
         id SERIAL PRIMARY KEY,
@@ -99,7 +102,7 @@ const initDb = async () => {
       )
     `);
 
-    // Insert trigger for collect_waste -> timeline
+    // Triggers to sync collect_waste with timeline
     await client.query(`
       CREATE OR REPLACE FUNCTION sync_collect_insert()
       RETURNS TRIGGER AS $$
@@ -121,7 +124,6 @@ const initDb = async () => {
       EXECUTE FUNCTION sync_collect_insert();
     `);
 
-    // Update trigger for collect_waste -> timeline
     await client.query(`
       CREATE OR REPLACE FUNCTION sync_collect_update()
       RETURNS TRIGGER AS $$
@@ -146,7 +148,6 @@ const initDb = async () => {
       EXECUTE FUNCTION sync_collect_update();
     `);
 
-    // Delete trigger for collect_waste -> timeline
     await client.query(`
       CREATE OR REPLACE FUNCTION sync_collect_delete()
       RETURNS TRIGGER AS $$
@@ -165,7 +166,7 @@ const initDb = async () => {
       EXECUTE FUNCTION sync_collect_delete();
     `);
 
-    // ======================= 4. Report Waste Tables & Triggers =======================
+    // ======================= 4. REPORTED WASTE (for Reported Waste Management & Analytics) =======================
     await client.query(`
       CREATE TABLE IF NOT EXISTS report_waste (
         id SERIAL PRIMARY KEY,
@@ -181,6 +182,7 @@ const initDb = async () => {
       )
     `);
 
+    // Timeline for reported waste
     await client.query(`
       CREATE TABLE IF NOT EXISTS report_waste_timeline (
         id SERIAL PRIMARY KEY,
@@ -196,7 +198,7 @@ const initDb = async () => {
       )
     `);
 
-    // Insert trigger for report_waste -> timeline
+    // Triggers for report_waste -> timeline
     await client.query(`
       CREATE OR REPLACE FUNCTION sync_report_insert()
       RETURNS TRIGGER AS $$
@@ -218,7 +220,6 @@ const initDb = async () => {
       EXECUTE FUNCTION sync_report_insert();
     `);
 
-    // Update trigger for report_waste -> timeline
     await client.query(`
       CREATE OR REPLACE FUNCTION sync_report_update()
       RETURNS TRIGGER AS $$
@@ -244,7 +245,6 @@ const initDb = async () => {
       EXECUTE FUNCTION sync_report_update();
     `);
 
-    // Delete trigger for report_waste -> timeline
     await client.query(`
       CREATE OR REPLACE FUNCTION sync_report_delete()
       RETURNS TRIGGER AS $$
@@ -263,8 +263,7 @@ const initDb = async () => {
       EXECUTE FUNCTION sync_report_delete();
     `);
 
-    // ======================= 5. Dashboard Triggers (on collect_waste & report_waste) =======================
-    // Function for updates coming from collect_waste
+    // ======================= 5. DASHBOARD SUMMARY TRIGGERS (for User Dashboard) =======================
     await client.query(`
       CREATE OR REPLACE FUNCTION update_dashboard_summary_collect()
       RETURNS TRIGGER AS $$
@@ -299,7 +298,6 @@ const initDb = async () => {
       END;
       $$ LANGUAGE plpgsql;
     `);
-
     await client.query(`DROP TRIGGER IF EXISTS dashboard_collect_trigger ON collect_waste;`);
     await client.query(`
       CREATE TRIGGER dashboard_collect_trigger
@@ -308,7 +306,6 @@ const initDb = async () => {
       EXECUTE FUNCTION update_dashboard_summary_collect();
     `);
 
-    // Function for updates coming from report_waste
     await client.query(`
       CREATE OR REPLACE FUNCTION update_dashboard_summary_report()
       RETURNS TRIGGER AS $$
@@ -343,7 +340,6 @@ const initDb = async () => {
       END;
       $$ LANGUAGE plpgsql;
     `);
-
     await client.query(`DROP TRIGGER IF EXISTS dashboard_report_trigger ON report_waste;`);
     await client.query(`
       CREATE TRIGGER dashboard_report_trigger
@@ -353,8 +349,12 @@ const initDb = async () => {
     `);
 
     console.log('All tables created / verified successfully');
+    console.log('Tables for Analytics: "Users-Login", "Admins-Login", "collect_waste", "report_waste"');
+    console.log('Tables for User Management: "Users-Login", "Admins-Login", "refresh_tokens", "admin_refresh_tokens"');
+    console.log('Tables for Collected Waste: "collect_waste", "collect_waste_timeline"');
+    console.log('Tables for Reported Waste: "report_waste", "report_waste_timeline"');
   } catch (error) {
-    console.error('Error creating tables:', error);
+    console.error('❌ Error creating tables:', error);
     throw error;
   } finally {
     client.release();
