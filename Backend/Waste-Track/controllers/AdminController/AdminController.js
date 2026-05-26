@@ -7,7 +7,7 @@ const ACCESS_TOKEN_SECRET = process.env.ADMIN_ACCESS_TOKEN_SECRET || 'admin_acce
 const REFRESH_TOKEN_SECRET = process.env.ADMIN_REFRESH_TOKEN_SECRET || 'admin_refresh_secret';
 
 function generateAccessToken(admin) {
-  return jwt.sign({ id: admin.id, email: admin.email, role: 'admin' }, ACCESS_TOKEN_SECRET, { expiresIn: '1h' });
+  return jwt.sign({ id: admin.id, email: admin.email, role: 'admin' }, ACCESS_TOKEN_SECRET, { expiresIn: '24h' });
 }
 
 function generateRefreshToken(admin) {

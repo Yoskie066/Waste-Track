@@ -127,7 +127,7 @@ export default function Analytics() {
 
           {/* Top Waste Types (list) */}
           <div className="bg-white rounded-xl p-4 shadow mb-8">
-            <h3 className="text-lg font-semibold text-gray-700 mb-4">🏆 Top Collected Waste Types</h3>
+            <h3 className="text-lg font-semibold text-gray-700 mb-4">Top Collected Waste Types</h3>
             {collected.topWasteTypes?.length ? (
               <div className="space-y-3">
                 {collected.topWasteTypes.slice(0, 5).map((item, idx) => (
@@ -200,7 +200,7 @@ export default function Analytics() {
 
           {/* Top Reported Waste Types */}
           <div className="bg-white rounded-xl p-4 shadow mb-8">
-            <h3 className="text-lg font-semibold text-gray-700 mb-4">⚠️ Most Reported Waste Types</h3>
+            <h3 className="text-lg font-semibold text-gray-700 mb-4">Most Reported Waste Types</h3>
             {reported.topWasteTypes?.length ? (
               <div className="space-y-3">
                 {reported.topWasteTypes.slice(0, 5).map((item, idx) => (
