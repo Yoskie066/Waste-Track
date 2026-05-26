@@ -354,7 +354,7 @@ const initDb = async () => {
     console.log('Tables for Collected Waste: "collect_waste", "collect_waste_timeline"');
     console.log('Tables for Reported Waste: "report_waste", "report_waste_timeline"');
   } catch (error) {
-    console.error('❌ Error creating tables:', error);
+    console.error('Error creating tables:', error);
     throw error;
   } finally {
     client.release();
