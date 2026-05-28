@@ -7,6 +7,8 @@ import Modal from "react-modal";
 import { FaCheckCircle, FaTimesCircle } from "react-icons/fa";
 import api from "../../../../services/api";
 
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+
 Modal.setAppElement("#root");
 
 const UserLogin = () => {
@@ -61,7 +63,7 @@ const UserLogin = () => {
   const handleGoToForgotPassword = () => navigate("/forgot-password");
   const handleGoBack = () => navigate("/home");
   const handleGoogleLogin = () => {
-    window.location.href = 'http://localhost:3000/api/auth/google';
+    window.location.href = `${BASE_URL}/api/auth/google`;
   };
 
   return (

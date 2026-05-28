@@ -7,6 +7,8 @@ import Modal from "react-modal";
 import { FaCheckCircle, FaTimesCircle } from "react-icons/fa";
 import adminApi from "../../../../services/adminApi";
 
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+
 Modal.setAppElement("#root");
 
 const AdminLogin = () => {
@@ -37,7 +39,6 @@ const AdminLogin = () => {
       if (response.data.accessToken) {
         localStorage.setItem("adminAccessToken", response.data.accessToken);
         localStorage.setItem("adminRefreshToken", response.data.refreshToken);
-        // Store admin data
         const adminData = response.data.user;
         localStorage.setItem("ecoTrackCurrentAdmin", JSON.stringify(adminData));
         
@@ -62,7 +63,7 @@ const AdminLogin = () => {
   const handleGoToForgotPassword = () => navigate("/admin-forgot-password");
   const handleGoBack = () => navigate("/home");
   const handleGoogleLogin = () => {
-    window.location.href = 'http://localhost:3000/api/auth/google/admin';
+    window.location.href = `${BASE_URL}/api/auth/google/admin`;
   };
 
   return (

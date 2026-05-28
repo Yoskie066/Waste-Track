@@ -7,6 +7,8 @@ import Modal from "react-modal";
 import { FaCheckCircle, FaTimesCircle } from "react-icons/fa";
 import adminApi from "../../../../services/adminApi";
 
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+
 Modal.setAppElement("#root");
 
 const AdminRegister = () => {
@@ -27,7 +29,7 @@ const AdminRegister = () => {
   const handleGoToLogin = () => navigate("/admin-login");
   const handleGoBack = () => navigate("/home");
   const handleGoogleRegister = () => {
-    window.location.href = 'http://localhost:3000/api/auth/google/admin';
+    window.location.href = `${BASE_URL}/api/auth/google/admin`;
   };
 
   const handleSubmit = async (e) => {
