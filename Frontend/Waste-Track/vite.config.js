@@ -9,8 +9,6 @@ export default defineConfig({
     VitePWA({
       registerType: "autoUpdate",
 
-      includeAssets: ["icon-192.png", "icon-512.png"],
-
       manifest: {
         name: "Waste Track",
         short_name: "WasteTrack",
@@ -40,11 +38,10 @@ export default defineConfig({
         clientsClaim: true,
         skipWaiting: true,
       },
-
-      devOptions: {
-        enabled: true,
-        type: "module",
-      },
     }),
   ],
+
+  build: {
+    chunkSizeWarningLimit: 1000,
+  },
 });
