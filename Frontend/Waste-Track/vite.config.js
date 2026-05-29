@@ -9,21 +9,17 @@ export default defineConfig({
     VitePWA({
       registerType: "autoUpdate",
 
-      includeAssets: [
-        "icon-192.png",
-        "icon-512.png",
-      ],
+      includeAssets: ["icon-192.png", "icon-512.png"],
 
       manifest: {
         name: "Waste Track",
         short_name: "WasteTrack",
         description: "Waste management tracking application",
-
         theme_color: "#16a34a",
         background_color: "#ffffff",
-
         display: "standalone",
         start_url: "/",
+        scope: "/",
 
         icons: [
           {
@@ -31,7 +27,6 @@ export default defineConfig({
             sizes: "192x192",
             type: "image/png",
           },
-
           {
             src: "/icon-512.png",
             sizes: "512x512",
@@ -39,6 +34,16 @@ export default defineConfig({
             purpose: "any maskable",
           },
         ],
+      },
+
+      workbox: {
+        clientsClaim: true,
+        skipWaiting: true,
+      },
+
+      devOptions: {
+        enabled: true,
+        type: "module",
       },
     }),
   ],
