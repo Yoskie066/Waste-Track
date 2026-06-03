@@ -4,8 +4,7 @@ import { FaRecycle, FaExclamationTriangle, FaEllipsisV, FaEdit, FaTrashAlt } fro
 import { format } from 'date-fns';
 import Modal from 'react-modal';
 import { useNavigate } from 'react-router-dom';
-import { Listbox, Transition } from '@headlessui/react';
-import { ChevronDown, Check } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import api from '../../../services/api';
 import { toast } from 'react-toastify';
 
@@ -14,91 +13,38 @@ Modal.setAppElement('#root');
 const WasteTimeline = () => {
   const navigate = useNavigate();
   const [timeline, setTimeline] = useState([]);
-  const [filteredTimeline, setFilteredTimeline] = useState([]);
   const [loading, setLoading] = useState(true);
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, id: null, type: null });
   const [openDropdownId, setOpenDropdownId] = useState(null);
-  const [sortOrder, setSortOrder] = useState('newest');
   const dropdownRef = useRef(null);
 
-  const sortOptions = [
-    { value: 'newest', label: 'Most Recent' },
-    { value: 'oldest', label: 'Oldest First' }
-  ];
-
-  useEffect(() => {
-    fetchTimeline();
-  }, []);
-
+  // Robust date parser for display only (no sorting needed)
   const parseEventDate = (dateValue) => {
     if (!dateValue) return new Date(0);
-    
     let dateObj = new Date(dateValue);
-    
-    if (isNaN(dateObj.getTime()) && typeof dateValue === 'string' && dateValue.includes('-')) {
-      
-      dateObj = new Date(dateValue + 'T00:00:00');
+    if (!isNaN(dateObj.getTime())) return dateObj;
+    if (typeof dateValue === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateValue)) {
+      const [year, month, day] = dateValue.split('-').map(Number);
+      dateObj = new Date(year, month - 1, day);
+      if (!isNaN(dateObj.getTime())) return dateObj;
     }
-    
-    if (isNaN(dateObj.getTime())) {
-      const parts = dateValue.split(/[-T:]/);
-      if (parts.length >= 3) {
-        const year = parseInt(parts[0], 10);
-        const month = parseInt(parts[1], 10) - 1;
-        const day = parseInt(parts[2], 10);
-        if (!isNaN(year) && !isNaN(month) && !isNaN(day)) {
-          dateObj = new Date(year, month, day);
-        }
+    const parts = dateValue.split(/[-T:]/);
+    if (parts.length >= 3) {
+      const year = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10) - 1;
+      const day = parseInt(parts[2], 10);
+      if (!isNaN(year) && !isNaN(month) && !isNaN(day)) {
+        return new Date(year, month, day);
       }
     }
-    
-    return isNaN(dateObj.getTime()) ? new Date(0) : dateObj;
+    return new Date(0);
   };
 
-  useEffect(() => {
-    if (!timeline.length) {
-      setFilteredTimeline([]);
-      return;
-    }
-
-    console.log('Sorting timeline with sortOrder:', sortOrder);
-    console.log('Original timeline dates:', timeline.map(t => ({ id: t.id, date: t.event_date, type: t.type })));
-
-    const sorted = [...timeline];
-    
-    if (sortOrder === 'newest') {
-      sorted.sort((a, b) => {
-        const dateA = parseEventDate(a.event_date);
-        const dateB = parseEventDate(b.event_date);
-        return dateB - dateA;
-      });
-    } else {
-      sorted.sort((a, b) => {
-        const dateA = parseEventDate(a.event_date);
-        const dateB = parseEventDate(b.event_date);
-        return dateA - dateB;
-      });
-    }
-    
-    console.log('Sorted dates:', sorted.map(t => ({ id: t.id, date: t.event_date, type: t.type })));
-    setFilteredTimeline(sorted);
-  }, [timeline, sortOrder]);
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setOpenDropdownId(null);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
+  // Fetch data from API
   const fetchTimeline = async () => {
     try {
       const response = await api.get('/waste-timeline');
       if (response.data.success) {
-        console.log('Fetched timeline data:', response.data.data);
         setTimeline(response.data.data);
       } else {
         toast.error('Failed to load timeline');
@@ -117,7 +63,22 @@ const WasteTimeline = () => {
     }
   };
 
-  const handleEdit = (item) => {
+  useEffect(() => {
+    fetchTimeline();
+  }, []);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setOpenDropdownId(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleUpdate = (item) => {
     setOpenDropdownId(null);
     if (item.type === 'collect') {
       navigate(`/collect-waste?editId=${item.original_id}`);
@@ -157,18 +118,14 @@ const WasteTimeline = () => {
     }
   };
 
+  // Loading state
   if (loading) {
     return (
-      <div className="min-h-screen flex justify-center items-center bg-gradient-to-br from-emerald-50 via-teal-50 to-green-100">
-        <div className="animate-spin rounded-full h-14 w-14 border-t-4 border-b-4 border-green-600"></div>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-emerald-50 via-teal-50 to-green-100">
+        <Loader2 className="w-12 h-12 text-green-600 animate-spin" />
       </div>
     );
   }
-
-  const dropdownButtonClass =
-    "relative w-44 cursor-pointer rounded-xl border border-gray-300 bg-white/80 backdrop-blur-sm py-2 pl-4 pr-10 text-left text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 text-sm";
-  const dropdownOptionsClass =
-    "absolute z-20 mt-2 max-h-60 w-full overflow-auto rounded-xl bg-white py-2 text-base shadow-lg ring-1 ring-black/5 focus:outline-none";
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-green-100 py-12 px-4 sm:px-6 lg:px-8">
@@ -190,60 +147,7 @@ const WasteTimeline = () => {
           Every contribution matters — track your waste journey
         </motion.p>
 
-        {/* Sorting Dropdown */}
-        <div className="flex justify-end mb-6">
-          <Listbox value={sortOrder} onChange={setSortOrder}>
-            <div className="relative">
-              <Listbox.Button className={dropdownButtonClass}>
-                <span className="block truncate">
-                  {sortOptions.find((opt) => opt.value === sortOrder)?.label}
-                </span>
-                <span className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                  <ChevronDown className="h-4 w-4 text-gray-500" />
-                </span>
-              </Listbox.Button>
-              <Transition
-                as={Fragment}
-                leave="transition ease-in duration-100"
-                leaveFrom="opacity-100"
-                leaveTo="opacity-0"
-              >
-                <Listbox.Options className={dropdownOptionsClass}>
-                  {sortOptions.map((option) => (
-                    <Listbox.Option
-                      key={option.value}
-                      value={option.value}
-                      className={({ active }) =>
-                        `relative cursor-default select-none py-2 pl-10 pr-4 ${
-                          active ? 'bg-green-100 text-green-900' : 'text-gray-900'
-                        }`
-                      }
-                    >
-                      {({ selected }) => (
-                        <>
-                          <span
-                            className={`block truncate ${
-                              selected ? 'font-medium' : 'font-normal'
-                            }`}
-                          >
-                            {option.label}
-                          </span>
-                          {selected && (
-                            <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-green-600">
-                              <Check className="h-5 w-5" />
-                            </span>
-                          )}
-                        </>
-                      )}
-                    </Listbox.Option>
-                  ))}
-                </Listbox.Options>
-              </Transition>
-            </div>
-          </Listbox>
-        </div>
-
-        {filteredTimeline.length === 0 ? (
+        {timeline.length === 0 ? (
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -256,7 +160,7 @@ const WasteTimeline = () => {
           </motion.div>
         ) : (
           <div className="space-y-8">
-            {filteredTimeline.map((item, idx) => {
+            {timeline.map((item, idx) => {
               const dropdownKey = `${item.type}-${item.id}`;
               const isOpen = openDropdownId === dropdownKey;
 
@@ -342,11 +246,11 @@ const WasteTimeline = () => {
                                 className="absolute right-0 mt-2 w-40 bg-white rounded-xl shadow-xl border border-gray-100 z-20 overflow-hidden"
                               >
                                 <button
-                                  onClick={() => handleEdit(item)}
+                                  onClick={() => handleUpdate(item)}
                                   className="w-full flex items-center gap-3 px-4 py-3 text-left text-gray-700 hover:bg-green-50 transition-colors duration-150"
                                 >
                                   <FaEdit size={16} className="text-blue-500" />
-                                  <span className="text-sm font-medium">Edit</span>
+                                  <span className="text-sm font-medium">Update</span>
                                 </button>
                                 <button
                                   onClick={() =>

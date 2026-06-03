@@ -3,7 +3,7 @@ import pool from '../../config/db.js';
 class WasteTimelineModel {
   /**
    * Fetch all timeline entries (collected + reported) for a given user
-   * Returns combined array sorted by date (descending)
+   * Returns combined array (unsorted – frontend will sort)
    */
   static async getUserTimeline(userEmail) {
     const client = await pool.connect();
@@ -42,10 +42,7 @@ class WasteTimelineModel {
       const reportResult = await client.query(reportQuery, [userEmail]);
 
       const combined = [...collectResult.rows, ...reportResult.rows];
-
-      // Sort by event_date descending (latest first)
-      combined.sort((a, b) => new Date(b.event_date) - new Date(a.event_date));
-
+      // No sorting here – frontend will sort based on user preference
       return combined;
     } finally {
       client.release();

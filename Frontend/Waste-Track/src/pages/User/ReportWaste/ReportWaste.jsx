@@ -30,20 +30,17 @@ const categoryData = {
   ],
   "Non Biodegradable": [
     "Plastic",
-    "Metals",
-    "Glass",
-    "E-Waste",
     "Synthetic Fibers",
     "Rubber",
-    "Chemical",
+    "Chemical Waste",
     "Construction Waste",
   ],
   Recycle: [
     "Paper & Cardboard",
     "Metals",
+    "Glass",
     "Textiles",
-    "Electronics",
-    "Batteries",
+    "Electronics and Batteries",
   ],
 };
 
@@ -221,10 +218,11 @@ const ReportWaste = () => {
     }
   };
 
+  // Updated loading state – matches WasteTimeline exactly
   if (loadingData) {
     return (
-      <div className="min-h-screen flex justify-center items-center bg-gradient-to-br from-emerald-50 via-teal-50 to-green-100">
-        <div className="animate-spin rounded-full h-14 w-14 border-t-4 border-b-4 border-green-600"></div>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-emerald-50 via-teal-50 to-green-100">
+        <Loader2 className="w-12 h-12 text-green-600 animate-spin" />
       </div>
     );
   }
