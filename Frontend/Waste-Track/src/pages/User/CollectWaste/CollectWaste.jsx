@@ -69,7 +69,7 @@ const CollectWaste = () => {
   const fileInputRef = useRef(null);
   const datePickerRef = useRef(null);
 
-  // Fetch data if edit mode
+  // Fetch data 
   useEffect(() => {
     if (editId) {
       const fetchCollectData = async () => {

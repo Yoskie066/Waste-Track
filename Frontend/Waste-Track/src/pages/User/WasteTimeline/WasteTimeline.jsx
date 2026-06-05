@@ -1,14 +1,20 @@
-import React, { useEffect, useState, useRef, Fragment } from 'react';
+import React, { useEffect, useState, useRef, Fragment, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaRecycle, FaExclamationTriangle, FaEllipsisV, FaEdit, FaTrashAlt } from 'react-icons/fa';
+import { FaRecycle, FaExclamationTriangle, FaEllipsisV, FaEdit, FaTrashAlt, FaSearch } from 'react-icons/fa';
 import { format } from 'date-fns';
 import Modal from 'react-modal';
 import { useNavigate } from 'react-router-dom';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ChevronDown, Check } from 'lucide-react';
+import { Listbox, Transition } from '@headlessui/react';
 import api from '../../../services/api';
 import { toast } from 'react-toastify';
 
 Modal.setAppElement('#root');
+
+const sortOptions = [
+  { value: 'DESC', label: 'Most Recent' },
+  { value: 'ASC', label: 'Oldest First' },
+];
 
 const WasteTimeline = () => {
   const navigate = useNavigate();
@@ -16,9 +22,11 @@ const WasteTimeline = () => {
   const [loading, setLoading] = useState(true);
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, id: null, type: null });
   const [openDropdownId, setOpenDropdownId] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortOrder, setSortOrder] = useState('DESC'); 
   const dropdownRef = useRef(null);
 
-  // Robust date parser for display only (no sorting needed)
+  // Robust date parser for display 
   const parseEventDate = (dateValue) => {
     if (!dateValue) return new Date(0);
     let dateObj = new Date(dateValue);
@@ -67,7 +75,6 @@ const WasteTimeline = () => {
     fetchTimeline();
   }, []);
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -77,6 +84,29 @@ const WasteTimeline = () => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Filter and sort logic
+  const filteredAndSortedTimeline = useMemo(() => {
+    let filtered = timeline;
+    // Filter by waste name 
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(item =>
+        item.waste_name?.toLowerCase().includes(term)
+      );
+    }
+    // Sort by event_date
+    const sorted = [...filtered].sort((a, b) => {
+      const dateA = new Date(a.event_date);
+      const dateB = new Date(b.event_date);
+      if (sortOrder === 'DESC') {
+        return dateB - dateA; 
+      } else {
+        return dateA - dateB; 
+      }
+    });
+    return sorted;
+  }, [timeline, searchTerm, sortOrder]);
 
   const handleUpdate = (item) => {
     setOpenDropdownId(null);
@@ -118,6 +148,59 @@ const WasteTimeline = () => {
     }
   };
 
+  // Custom dropdown component for sort order
+  const SortDropdown = () => (
+    <Listbox value={sortOrder} onChange={setSortOrder}>
+      <div className="relative">
+        <Listbox.Button className="relative w-full cursor-pointer rounded-xl border border-gray-300 bg-white/80 py-2 pl-4 pr-10 text-left text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-500">
+          <span className="block truncate">
+            {sortOrder === 'DESC' ? 'Most Recent' : 'Oldest First'}
+          </span>
+          <span className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+            <ChevronDown className="h-5 w-5 text-gray-500" />
+          </span>
+        </Listbox.Button>
+        <Transition
+          as={Fragment}
+          leave="transition ease-in duration-100"
+          leaveFrom="opacity-100"
+          leaveTo="opacity-0"
+        >
+          <Listbox.Options className="absolute z-20 mt-2 w-full overflow-auto rounded-xl bg-white py-2 text-base shadow-lg ring-1 ring-black/5 focus:outline-none">
+            {sortOptions.map((option) => (
+              <Listbox.Option
+                key={option.value}
+                value={option.value}
+                className={({ active }) =>
+                  `relative cursor-default select-none py-2 pl-10 pr-4 ${
+                    active ? 'bg-green-100 text-green-900' : 'text-gray-900'
+                  }`
+                }
+              >
+                {({ selected }) => (
+                  <>
+                    <span
+                      className={`block truncate ${
+                        selected ? 'font-medium' : 'font-normal'
+                      }`}
+                    >
+                      {option.label}
+                    </span>
+                    {selected && (
+                      <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-green-600">
+                        <Check className="h-5 w-5" />
+                      </span>
+                    )}
+                  </>
+                )}
+              </Listbox.Option>
+            ))}
+          </Listbox.Options>
+        </Transition>
+      </div>
+    </Listbox>
+  );
+
   // Loading state
   if (loading) {
     return (
@@ -147,7 +230,24 @@ const WasteTimeline = () => {
           Every contribution matters — track your waste journey
         </motion.p>
 
-        {timeline.length === 0 ? (
+        {/* Filter and Sort Controls */}
+        <div className="flex flex-col sm:flex-row gap-4 mb-8 items-center justify-between">
+          <div className="relative w-full sm:w-96">
+            <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search by waste name..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 rounded-xl border border-gray-300 bg-white/80 focus:outline-none focus:ring-2 focus:ring-green-500"
+            />
+          </div>
+          <div className="w-full sm:w-56">
+            <SortDropdown />
+          </div>
+        </div>
+
+        {filteredAndSortedTimeline.length === 0 ? (
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -155,12 +255,14 @@ const WasteTimeline = () => {
           >
             <div className="text-6xl mb-4">🌱</div>
             <p className="text-gray-600 text-lg">
-              No entries yet. Start by collecting or reporting waste.
+              {timeline.length === 0
+                ? 'No entries yet. Start by collecting or reporting waste.'
+                : 'No matching entries found.'}
             </p>
           </motion.div>
         ) : (
           <div className="space-y-8">
-            {timeline.map((item, idx) => {
+            {filteredAndSortedTimeline.map((item, idx) => {
               const dropdownKey = `${item.type}-${item.id}`;
               const isOpen = openDropdownId === dropdownKey;
 

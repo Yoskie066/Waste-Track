@@ -70,7 +70,7 @@ const ReportWaste = () => {
   const fileInputRef = useRef(null);
   const datePickerRef = useRef(null);
 
-  // Fetch data if edit mode (using URL query parameter)
+  // Fetch data 
   useEffect(() => {
     if (editId) {
       const fetchReportData = async () => {

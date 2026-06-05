@@ -11,14 +11,26 @@ Modal.setAppElement("#root");
 
 const categoryData = {
   Biodegradable: [
-    "Food Waste", "Garden Waste", "Paper Products", "Wood & Natural Fibers",
-    "Biodegradable Packaging", "Other Organic Waste",
+    "Food Waste",
+    "Garden Waste",
+    "Paper Products",
+    "Wood & Natural Fibers",
+    "Biodegradable Packaging",
+    "Other Organic Waste",
   ],
   "Non Biodegradable": [
-    "Plastic", "Metals", "Glass", "E-Waste", "Synthetic Fibers", "Rubber", "Chemical", "Construction Waste",
+    "Plastic",
+    "Synthetic Fibers",
+    "Rubber",
+    "Chemical Waste",
+    "Construction Waste",
   ],
   Recycle: [
-    "Paper & Cardboard", "Metals", "Textiles", "Electronics", "Batteries",
+    "Paper & Cardboard",
+    "Metals",
+    "Glass",
+    "Textiles",
+    "Electronics and Batteries",
   ],
 };
 
